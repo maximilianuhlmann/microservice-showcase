@@ -9,6 +9,7 @@ import org.testcontainers.utility.DockerImageName;
 /**
  * Testcontainers configuration for PostgreSQL.
  * Provides a real PostgreSQL database for integration tests.
+ * The container is automatically stopped when the JVM shuts down.
  */
 public class PostgresTestContainer implements ApplicationContextInitializer<ConfigurableApplicationContext> {
 
@@ -18,9 +19,10 @@ public class PostgresTestContainer implements ApplicationContextInitializer<Conf
         postgres = new PostgreSQLContainer<>(DockerImageName.parse("postgres:15-alpine"))
                 .withDatabaseName("testdb")
                 .withUsername("test")
-                .withPassword("test")
-                .withReuse(true);
+                .withPassword("test");
         postgres.start();
+        // Container will be automatically stopped by Testcontainers when JVM shuts down
+        Runtime.getRuntime().addShutdownHook(new Thread(postgres::stop));
     }
 
     @Override

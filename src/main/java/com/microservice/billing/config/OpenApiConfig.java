@@ -17,6 +17,10 @@ import java.util.List;
 @Configuration
 public class OpenApiConfig {
 
+    public OpenApiConfig() {
+        // Default constructor for Spring
+    }
+
     @Value("${spring.application.name:usage-billing-service}")
     private String applicationName;
 

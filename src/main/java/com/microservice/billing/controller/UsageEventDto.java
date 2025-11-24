@@ -23,17 +23,17 @@ public class UsageEventDto {
     @Schema(description = "Unique identifier of the usage event", example = "550e8400-e29b-41d4-a716-446655440000")
     private UUID id;
 
-    @Schema(description = "Customer identifier", example = "customer-123", required = true)
+    @Schema(description = "Customer identifier", example = "customer-123", requiredMode = Schema.RequiredMode.REQUIRED)
     @NotBlank(message = "Customer ID is required")
     @jakarta.validation.constraints.Size(max = 255, message = "Customer ID must not exceed 255 characters")
     private String customerId;
 
-    @Schema(description = "Type of service being used", example = "api-calls", required = true)
+    @Schema(description = "Type of service being used", example = "api-calls", requiredMode = Schema.RequiredMode.REQUIRED)
     @NotBlank(message = "Service type is required")
     @jakarta.validation.constraints.Size(max = 255, message = "Service type must not exceed 255 characters")
     private String serviceType;
 
-    @Schema(description = "Quantity of usage", example = "10.5", required = true)
+    @Schema(description = "Quantity of usage", example = "10.5", requiredMode = Schema.RequiredMode.REQUIRED)
     @NotNull(message = "Quantity is required")
     @Positive(message = "Quantity must be positive")
     private BigDecimal quantity;
