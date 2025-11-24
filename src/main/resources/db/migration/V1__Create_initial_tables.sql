@@ -54,10 +54,9 @@ CREATE TABLE IF NOT EXISTS billing_cycles (
     status VARCHAR(50) NOT NULL,
     total_amount DECIMAL(19, 2) NOT NULL,
     currency VARCHAR(3) NOT NULL DEFAULT 'EUR',
-    invoice_id UUID,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    invoice_id UUID
 );
 
-CREATE INDEX idx_billing_cycles_customer_period ON billing_cycles(customer_id, start_date, end_date);
+CREATE INDEX idx_customer_period ON billing_cycles(customer_id, start_date, end_date);
 CREATE INDEX idx_billing_cycles_status ON billing_cycles(status);
 

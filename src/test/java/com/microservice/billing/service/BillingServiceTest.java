@@ -1,45 +1,61 @@
 package com.microservice.billing.service;
 
-import com.microservice.billing.config.FeatureFlags;
+import com.microservice.billing.config.BillingServiceTestConfiguration;
+import com.microservice.billing.config.Features;
+import com.microservice.billing.config.PostgresTestContainer;
 import com.microservice.billing.domain.BillingRecord;
 import com.microservice.billing.domain.UsageEvent;
 import com.microservice.billing.repository.BillingRecordRepository;
 import com.microservice.billing.repository.UsageEventRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.TestPropertySource;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.boot.test.mock.mockito.SpyBean;
+import org.togglz.core.manager.FeatureManager;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-@ExtendWith(MockitoExtension.class)
+@SpringBootTest(
+    classes = BillingServiceTestConfiguration.class,
+    properties = "spring.main.allow-bean-definition-overriding=true"
+)
+@org.springframework.test.context.ContextConfiguration(initializers = PostgresTestContainer.class)
+@TestPropertySource(properties = {
+        "spring.flyway.enabled=true",
+        "spring.jpa.hibernate.ddl-auto=none"
+})
 class BillingServiceTest {
 
-    @Mock
+    @MockBean
     private UsageEventRepository usageEventRepository;
 
-    @Mock
+    @MockBean
     private BillingRecordRepository billingRecordRepository;
 
-    @Mock
-    private FeatureFlags featureFlags;
+    @MockBean
+    private FeatureManager featureManager;
 
-    @InjectMocks
+    // Mappers are provided by ServiceTestConfig as @Primary mocks
+    // We can override them with @MockBean if needed for specific test behavior
+
+    @SpyBean
     private BillingService billingService;
 
     @BeforeEach
     void setUp() {
-        when(featureFlags.isUsageAggregationEnabled()).thenReturn(true);
+        // Enable USAGE_AGGREGATION feature by default for tests
+        when(featureManager.isActive(Features.USAGE_AGGREGATION)).thenReturn(true);
     }
 
     @Test
@@ -47,24 +63,28 @@ class BillingServiceTest {
         // Given
         String customerId = "customer-1";
         LocalDate billingPeriod = LocalDate.of(2024, 1, 1);
+        LocalDateTime periodStart = billingPeriod.atStartOfDay();
+        LocalDateTime periodEnd = billingPeriod.plusMonths(1).atStartOfDay().minusSeconds(1);
 
         UsageEvent event1 = UsageEvent.builder()
-                .id(1L)
+                .id(UUID.randomUUID())
                 .customerId(customerId)
-                .serviceId("service-1")
+                .serviceType("api-calls")
                 .quantity(new BigDecimal("10"))
+                .unit("requests")
                 .timestamp(LocalDateTime.of(2024, 1, 15, 10, 0))
                 .build();
 
         UsageEvent event2 = UsageEvent.builder()
-                .id(2L)
+                .id(UUID.randomUUID())
                 .customerId(customerId)
-                .serviceId("service-1")
+                .serviceType("api-calls")
                 .quantity(new BigDecimal("20"))
+                .unit("requests")
                 .timestamp(LocalDateTime.of(2024, 1, 20, 10, 0))
                 .build();
 
-        when(usageEventRepository.findByCustomerId(customerId))
+        when(usageEventRepository.findByCustomerIdAndDateRange(customerId, periodStart, periodEnd))
                 .thenReturn(List.of(event1, event2));
         when(billingRecordRepository.findByCustomerIdAndBillingPeriod(customerId, billingPeriod))
                 .thenReturn(Optional.empty());

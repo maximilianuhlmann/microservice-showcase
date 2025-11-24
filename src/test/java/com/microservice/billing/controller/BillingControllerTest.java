@@ -1,6 +1,7 @@
 package com.microservice.billing.controller;
 
 import com.microservice.billing.domain.BillingRecord;
+import com.microservice.billing.mapper.BillingRecordMapper;
 import com.microservice.billing.service.BillingService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,7 +20,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(BillingController.class)
+@WebMvcTest(controllers = BillingController.class, excludeAutoConfiguration = {
+        org.togglz.spring.boot.actuate.autoconfigure.TogglzAutoConfiguration.class
+})
 class BillingControllerTest {
 
     @Autowired
@@ -27,6 +30,9 @@ class BillingControllerTest {
 
     @MockBean
     private BillingService billingService;
+
+    @MockBean
+    private BillingRecordMapper billingRecordMapper;
 
     @Test
     void shouldCalculateBilling() throws Exception {
@@ -41,7 +47,15 @@ class BillingControllerTest {
                 .totalAmount(new BigDecimal("100.50"))
                 .build();
 
+        BillingRecordDto dto = BillingRecordDto.builder()
+                .id(1L)
+                .customerId(customerId)
+                .billingPeriod(billingPeriod)
+                .totalAmount(new BigDecimal("100.50"))
+                .build();
+
         when(billingService.calculateBilling(customerId, billingPeriod)).thenReturn(record);
+        when(billingRecordMapper.toDto(any(BillingRecord.class))).thenReturn(dto);
 
         // When & Then
         mockMvc.perform(post("/api/v1/billing/{customerId}/calculate", customerId)
@@ -66,8 +80,16 @@ class BillingControllerTest {
                 .totalAmount(new BigDecimal("100.50"))
                 .build();
 
+        BillingRecordDto dto = BillingRecordDto.builder()
+                .id(1L)
+                .customerId(customerId)
+                .billingPeriod(billingPeriod)
+                .totalAmount(new BigDecimal("100.50"))
+                .build();
+
         when(billingService.getBillingRecord(customerId, billingPeriod))
                 .thenReturn(Optional.of(record));
+        when(billingRecordMapper.toDto(any(BillingRecord.class))).thenReturn(dto);
 
         // When & Then
         mockMvc.perform(get("/api/v1/billing/{customerId}", customerId)

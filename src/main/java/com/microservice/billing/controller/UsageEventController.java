@@ -48,9 +48,9 @@ public class UsageEventController {
         log.info("Recording usage event for customer: {}, service: {}, quantity: {}", 
                 dto.getCustomerId(), dto.getServiceType(), dto.getQuantity());
         
-        var saved = usageEventService.recordUsage(usageEventMapper.mapToEntity(dto));
+        var saved = usageEventService.recordUsage(usageEventMapper.toEntity(dto));
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(usageEventMapper.mapToDto(saved));
+                .body(usageEventMapper.toDto(saved));
     }
 
     @Operation(
@@ -64,7 +64,7 @@ public class UsageEventController {
             @PathVariable String customerId) {
         log.info("Retrieving usage events for customer: {}", customerId);
         var events = usageEventService.getUsageEventsByCustomer(customerId);
-        return ResponseEntity.ok(usageEventMapper.mapToDtoList(events));
+        return ResponseEntity.ok(usageEventMapper.toDtoList(events));
     }
 
     @Operation(
@@ -80,7 +80,7 @@ public class UsageEventController {
             @PathVariable String serviceType) {
         log.info("Retrieving usage events for customer: {} and service: {}", customerId, serviceType);
         var events = usageEventService.getUsageEventsByCustomerAndServiceType(customerId, serviceType);
-        return ResponseEntity.ok(usageEventMapper.mapToDtoList(events));
+        return ResponseEntity.ok(usageEventMapper.toDtoList(events));
     }
 }
 

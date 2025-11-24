@@ -51,7 +51,7 @@ public class BillingController {
         
         log.info("Calculating billing for customer: {}, period: {}", customerId, billingPeriod);
         var record = billingService.calculateBilling(customerId, billingPeriod);
-        return ResponseEntity.ok(billingRecordMapper.mapToDto(record));
+        return ResponseEntity.ok(billingRecordMapper.toDto(record));
     }
 
     @Operation(
@@ -71,7 +71,7 @@ public class BillingController {
         
         log.info("Retrieving billing record for customer: {}, period: {}", customerId, billingPeriod);
         return billingService.getBillingRecord(customerId, billingPeriod)
-                .map(billingRecordMapper::mapToDto)
+                .map(billingRecordMapper::toDto)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND).build());
     }
