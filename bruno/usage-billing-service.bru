@@ -1,0 +1,81 @@
+meta {
+  name: Usage Billing Service
+  type: http
+  version: 1
+}
+
+vars {
+  baseUrl: http://localhost:8080
+  customerId: customer-123
+  billingPeriod: 2024-01-01
+}
+
+### Record Usage Event - API Calls
+post {{baseUrl}}/api/v1/usage-events
+headers {
+  Content-Type: application/json
+}
+body:json {
+  "customerId": "{{customerId}}",
+  "serviceType": "api-calls",
+  "quantity": 1000,
+  "unit": "requests",
+  "timestamp": "2024-01-15T10:30:00",
+  "metadata": "{\"endpoint\":\"/api/users\",\"method\":\"GET\"}"
+}
+
+### Record Usage Event - Storage
+post {{baseUrl}}/api/v1/usage-events
+headers {
+  Content-Type: application/json
+}
+body:json {
+  "customerId": "{{customerId}}",
+  "serviceType": "storage",
+  "quantity": 10.5,
+  "unit": "gb",
+  "timestamp": "2024-01-15T11:00:00",
+  "metadata": "{\"bucket\":\"user-data\"}"
+}
+
+### Record Usage Event - Compute
+post {{baseUrl}}/api/v1/usage-events
+headers {
+  Content-Type: application/json
+}
+body:json {
+  "customerId": "{{customerId}}",
+  "serviceType": "compute",
+  "quantity": 2.5,
+  "unit": "hours",
+  "timestamp": "2024-01-15T12:00:00",
+  "metadata": "{\"instance\":\"t2.medium\"}"
+}
+
+### Get Usage Events by Customer
+get {{baseUrl}}/api/v1/usage-events/customer/{{customerId}}
+
+### Get Usage Events by Customer and Service Type
+get {{baseUrl}}/api/v1/usage-events/customer/{{customerId}}/service/api-calls
+
+### Calculate Billing
+post {{baseUrl}}/api/v1/billing/{{customerId}}/calculate?billingPeriod={{billingPeriod}}
+
+### Get Billing Record
+get {{baseUrl}}/api/v1/billing/{{customerId}}?billingPeriod={{billingPeriod}}
+
+### Get Usage Aggregation by Service Type
+get {{baseUrl}}/api/v1/billing/{{customerId}}/usage-by-service
+
+### Get Total Usage
+get {{baseUrl}}/api/v1/billing/{{customerId}}/total-usage
+
+### Health Check
+get {{baseUrl}}/actuator/health
+
+### Swagger UI
+get {{baseUrl}}/swagger-ui.html
+
+### API Docs
+get {{baseUrl}}/api-docs
+
