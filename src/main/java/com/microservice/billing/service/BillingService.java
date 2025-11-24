@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.togglz.core.manager.FeatureManager;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -30,6 +31,7 @@ public class BillingService {
 
     private final UsageEventRepository usageEventRepository;
     private final BillingRecordRepository billingRecordRepository;
+    private final FeatureManager featureManager;
 
     // Simple rate per unit - in real implementation, this would come from a pricing service
     private static final BigDecimal RATE_PER_UNIT = new BigDecimal("0.01");
@@ -53,7 +55,7 @@ public class BillingService {
     }
 
     private BillingRecord calculateAndSaveBilling(String customerId, LocalDate billingPeriod) {
-        if (!Features.USAGE_AGGREGATION.isActive()) {
+        if (!featureManager.isActive(Features.USAGE_AGGREGATION)) {
             throw new IllegalStateException("Usage aggregation is disabled");
         }
 
