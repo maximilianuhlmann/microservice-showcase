@@ -19,7 +19,7 @@ A minimal viable product (MVP) for usage-based billing built with Java Spring Bo
 
 Built using **MVC (Model-View-Controller)** pattern:
 
-- **Model**: Domain entities (`UsageEvent`, `BillingRecord`, `Customer`, `BillingCycle`)
+- **Model**: Domain entities (`UsageEvent`, `BillingRecord`)
 - **View**: REST API with DTOs
 - **Controller**: REST controllers (`UsageEventController`, `BillingController`)
 - **Service**: Business logic layer
@@ -37,6 +37,8 @@ Built using **MVC (Model-View-Controller)** pattern:
 
 ### Feature Flags (Togglz)
 
+**Admin Console:** Access at `http://localhost:8080/togglz` to manage feature flags in real-time.
+
 Configured in `application.properties`:
 - `togglz.usage-aggregation=true` - Enable/disable usage aggregation
 - `togglz.realtime-billing=false` - Enable real-time billing (future)
@@ -46,8 +48,15 @@ Configured in `application.properties`:
 
 Usage in code:
 ```java
-if (Features.USAGE_AGGREGATION.isActive()) {
-    // Feature is enabled
+@RequiredArgsConstructor
+public class YourService {
+    private final FeatureManager featureManager;
+    
+    public void someMethod() {
+        if (featureManager.isActive(Features.USAGE_AGGREGATION)) {
+            // Feature is enabled
+        }
+    }
 }
 ```
 
@@ -61,13 +70,10 @@ src/
 │   │   ├── config/
 │   │   │   ├── Features.java          # Feature flags enum
 │   │   │   ├── TogglzConfig.java     # Togglz configuration
-│   │   │   ├── FeatureFlags.java     # Legacy wrapper (deprecated)
 │   │   │   └── OpenApiConfig.java    # OpenAPI/Swagger config
 │   │   ├── domain/
 │   │   │   ├── UsageEvent.java
-│   │   │   ├── BillingRecord.java
-│   │   │   ├── Customer.java
-│   │   │   └── BillingCycle.java
+│   │   │   └── BillingRecord.java
 │   │   ├── repository/
 │   │   │   ├── UsageEventRepository.java
 │   │   │   └── BillingRecordRepository.java
@@ -109,6 +115,13 @@ java -jar target/usage-billing-service-1.0.0-SNAPSHOT.jar
 
 The application will start on `http://localhost:8080`
 
+### Accessing API Documentation
+
+- **Swagger UI (Interactive):** http://localhost:8080/swagger-ui.html
+- **OpenAPI JSON:** http://localhost:8080/api-docs
+- **Togglz Admin Console:** http://localhost:8080/togglz (Username: `admin`, Password: `admin123`)
+- **H2 Console:** http://localhost:8080/h2-console (Username: `admin`, Password: `admin123`)
+
 ### Running Tests
 
 ```bash
@@ -121,6 +134,51 @@ mvn test -Dtest=*Test
 # Run only integration tests
 mvn test -Dtest=*IT
 ```
+
+### Code Quality & Test Coverage
+
+#### JaCoCo Test Coverage
+
+JaCoCo automatically generates coverage reports when running tests:
+
+```bash
+# Run tests and generate coverage report
+mvn clean test
+
+# View HTML coverage report
+open target/site/jacoco/index.html
+```
+
+**Coverage Reports:**
+- **HTML Report**: `target/site/jacoco/index.html` - Interactive browser report
+- **XML Report**: `target/site/jacoco/jacoco.xml` - For SonarQube integration
+
+#### SonarQube Analysis
+
+Run SonarQube analysis (requires SonarQube server):
+
+```bash
+# Run SonarQube analysis
+mvn sonar:sonar
+
+# Or with explicit server configuration
+mvn sonar:sonar \
+  -Dsonar.host.url=http://localhost:9000 \
+  -Dsonar.login=your-token
+```
+
+**Note:** SonarQube automatically reads JaCoCo XML reports for coverage metrics. You need both:
+- **JaCoCo** generates the coverage data
+- **SonarQube** displays it alongside code quality metrics (bugs, vulnerabilities, code smells)
+
+#### SonarLint (IDE Plugin)
+
+For real-time code quality feedback in your IDE:
+- **IntelliJ IDEA**: Settings → Plugins → Install "SonarLint"
+- **VS Code**: Extensions → Install "SonarLint"
+- **Eclipse**: Marketplace → Install "SonarLint"
+
+SonarLint works automatically as you code and doesn't require a SonarQube server.
 
 ## API Endpoints
 
@@ -184,8 +242,7 @@ All layers have comprehensive test coverage:
 ### Test Data
 
 Test data is available in `src/test/resources/test-data.sql` for integration tests:
-- Test customers (customer-123, customer-456)
-- Sample usage events
+- Sample usage events for customer-123 and customer-456
 - Sample billing records
 
 ### API Testing with Bruno

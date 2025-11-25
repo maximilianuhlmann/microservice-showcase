@@ -27,7 +27,6 @@ class UsageEventRepositoryTest {
 
     @Test
     void shouldSaveUsageEvent() {
-        // Given
         UsageEvent event = UsageEvent.builder()
                 .customerId("customer-1")
                 .serviceType("api-calls")
@@ -36,10 +35,8 @@ class UsageEventRepositoryTest {
                 .timestamp(LocalDateTime.now())
                 .build();
 
-        // When
         UsageEvent saved = repository.save(event);
 
-        // Then
         assertNotNull(saved.getId());
         assertEquals("customer-1", saved.getCustomerId());
         assertEquals("api-calls", saved.getServiceType());
@@ -48,7 +45,6 @@ class UsageEventRepositoryTest {
 
     @Test
     void shouldFindUsageEventsByCustomerId() {
-        // Given
         UsageEvent event1 = UsageEvent.builder()
                 .customerId("customer-1")
                 .serviceType("api-calls")
@@ -75,17 +71,14 @@ class UsageEventRepositoryTest {
 
         repository.saveAll(List.of(event1, event2, event3));
 
-        // When
         List<UsageEvent> found = repository.findByCustomerId("customer-1");
 
-        // Then
         assertEquals(2, found.size());
         assertTrue(found.stream().allMatch(e -> e.getCustomerId().equals("customer-1")));
     }
 
     @Test
     void shouldFindUsageEventsByCustomerIdAndServiceType() {
-        // Given
         UsageEvent event1 = UsageEvent.builder()
                 .customerId("customer-1")
                 .serviceType("api-calls")
@@ -104,10 +97,8 @@ class UsageEventRepositoryTest {
 
         repository.saveAll(List.of(event1, event2));
 
-        // When
         List<UsageEvent> found = repository.findByCustomerIdAndServiceType("customer-1", "api-calls");
 
-        // Then
         assertEquals(1, found.size());
         assertEquals("api-calls", found.get(0).getServiceType());
     }

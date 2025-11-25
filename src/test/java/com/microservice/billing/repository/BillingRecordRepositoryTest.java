@@ -27,17 +27,14 @@ class BillingRecordRepositoryTest {
 
     @Test
     void shouldSaveBillingRecord() {
-        // Given
         BillingRecord record = BillingRecord.builder()
                 .customerId("customer-1")
                 .billingPeriod(LocalDate.of(2024, 1, 1))
                 .totalAmount(new BigDecimal("100.50"))
                 .build();
 
-        // When
         BillingRecord saved = repository.save(record);
 
-        // Then
         assertNotNull(saved.getId());
         assertEquals("customer-1", saved.getCustomerId());
         assertEquals(new BigDecimal("100.50"), saved.getTotalAmount());
@@ -45,7 +42,6 @@ class BillingRecordRepositoryTest {
 
     @Test
     void shouldFindBillingRecordByCustomerIdAndPeriod() {
-        // Given
         BillingRecord record = BillingRecord.builder()
                 .customerId("customer-1")
                 .billingPeriod(LocalDate.of(2024, 1, 1))
@@ -54,13 +50,11 @@ class BillingRecordRepositoryTest {
 
         repository.save(record);
 
-        // When
         Optional<BillingRecord> found = repository.findByCustomerIdAndBillingPeriod(
                 "customer-1",
                 LocalDate.of(2024, 1, 1)
         );
 
-        // Then
         assertTrue(found.isPresent());
         assertEquals("customer-1", found.get().getCustomerId());
         assertEquals(new BigDecimal("100.50"), found.get().getTotalAmount());
@@ -68,13 +62,11 @@ class BillingRecordRepositoryTest {
 
     @Test
     void shouldReturnEmptyWhenRecordNotFound() {
-        // When
         Optional<BillingRecord> found = repository.findByCustomerIdAndBillingPeriod(
                 "customer-999",
                 LocalDate.of(2024, 1, 1)
         );
 
-        // Then
         assertFalse(found.isPresent());
     }
 }

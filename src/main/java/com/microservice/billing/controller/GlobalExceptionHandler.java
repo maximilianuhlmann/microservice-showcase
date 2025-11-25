@@ -12,10 +12,6 @@ import org.springframework.web.context.request.WebRequest;
 import java.time.LocalDateTime;
 import java.util.stream.Collectors;
 
-/**
- * Global exception handler for consistent error responses.
- * Provides proper validation error messages and HTTP status codes.
- */
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {

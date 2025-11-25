@@ -10,9 +10,6 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-/**
- * Represents a billing record for a customer for a specific billing period.
- */
 @Entity
 @Table(name = "billing_records", uniqueConstraints = {
         @UniqueConstraint(columnNames = {"customer_id", "billing_period"})

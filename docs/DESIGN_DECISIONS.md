@@ -17,7 +17,7 @@
 **Current Structure:**
 ```
 src/main/java/com/microservice/billing/
-├── domain/          # Business domain entities (UsageEvent, BillingRecord, Customer)
+├── domain/          # Business domain entities (UsageEvent, BillingRecord)
 ├── dto/             # Data Transfer Objects (if we separate them)
 ├── controller/      # REST controllers
 ├── service/         # Business logic

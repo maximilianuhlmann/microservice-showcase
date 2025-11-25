@@ -6,23 +6,28 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
 
-/**
- * Testcontainers configuration for PostgreSQL.
- * Provides a real PostgreSQL database for integration tests.
- * The container is automatically stopped when the JVM shuts down.
- */
 public class PostgresTestContainer implements ApplicationContextInitializer<ConfigurableApplicationContext> {
 
     private static final PostgreSQLContainer<?> postgres;
 
     static {
-        postgres = new PostgreSQLContainer<>(DockerImageName.parse("postgres:15-alpine"))
+        @SuppressWarnings("resource") // Container is closed via shutdown hook on JVM shutdown
+        PostgreSQLContainer<?> container = new PostgreSQLContainer<>(DockerImageName.parse("postgres:15-alpine"))
                 .withDatabaseName("testdb")
-                .withUsername("test")
-                .withPassword("test");
-        postgres.start();
-        // Container will be automatically stopped by Testcontainers when JVM shuts down
-        Runtime.getRuntime().addShutdownHook(new Thread(postgres::stop));
+                .withUsername("testuser")
+                .withPassword("testpass123");
+        container.start();
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            try {
+                if (container != null && container.isRunning()) {
+                    container.close();
+                }
+            } catch (Exception e) {
+                // Ignore exceptions during shutdown
+            }
+        }));
+        
+        postgres = container;
     }
 
     @Override

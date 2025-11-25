@@ -11,15 +11,8 @@ import org.springframework.context.annotation.Configuration;
 
 import java.util.List;
 
-/**
- * OpenAPI/Swagger configuration for API documentation.
- */
 @Configuration
 public class OpenApiConfig {
-
-    public OpenApiConfig() {
-        // Default constructor for Spring
-    }
 
     @Value("${spring.application.name:usage-billing-service}")
     private String applicationName;

@@ -11,16 +11,8 @@ import org.togglz.core.user.FeatureUser;
 import org.togglz.core.user.SimpleFeatureUser;
 import org.togglz.core.user.UserProvider;
 
-/**
- * Togglz configuration for feature flags.
- * Uses in-memory state repository for MVP. Can be extended to use database or external service.
- */
 @Configuration
 public class TogglzConfig {
-
-    public TogglzConfig() {
-        // Default constructor for Spring
-    }
 
     @Bean
     public FeatureManager featureManager() {
@@ -51,7 +43,6 @@ public class TogglzConfig {
         private boolean webhookNotifications;
         private boolean advancedMetrics;
 
-        // Getters and setters
         public boolean isRealtimeBilling() { return realtimeBilling; }
         public void setRealtimeBilling(final boolean realtimeBilling) { this.realtimeBilling = realtimeBilling; }
         

@@ -74,31 +74,19 @@ POST /api/v1/billing/customer-123/calculate?billingPeriod=2024-01-01
 
 ## Data Flow
 
-```
-┌─────────────────┐
-│ External Service│
-│ (API Gateway)   │
-└────────┬────────┘
-         │
-         │ POST /api/v1/usage-events
-         │ {customerId, serviceType, quantity, ...}
-         ▼
-┌─────────────────┐
-│ Usage Billing   │
-│   Service       │
-│                 │
-│ 1. Store event  │
-│ 2. Aggregate    │
-│ 3. Calculate    │
-└────────┬────────┘
-         │
-         │ GET /api/v1/billing/{customerId}
-         │
-         ▼
-┌─────────────────┐
-│ Billing System  │
-│ / Invoice       │
-└─────────────────┘
+```mermaid
+graph LR
+    A[External Service<br/>API Gateway] -->|POST /api/v1/usage-events| B[Usage Billing Service]
+    
+    B1[1. Store event] --> B2[2. Aggregate]
+    B2 --> B3[3. Calculate]
+    
+    B --> B1
+    B3 -->|GET /api/v1/billing/{customerId}| C[Billing System<br/>Invoice Generation]
+    
+    style A fill:#e1f5ff
+    style B fill:#fff4e1
+    style C fill:#e1ffe1
 ```
 
 ## Service Types
@@ -174,8 +162,7 @@ The service demonstrates proficiency with Java streams:
 ### Database Migrations
 
 Uses **Flyway** for version-controlled database schema:
-- `V1__Create_initial_tables.sql` - PostgreSQL
-- `V1_1__Create_initial_tables_h2.sql` - H2 (development)
+- `V1__Create_initial_tables.sql` - PostgreSQL (used for both development and production)
 
 ### Mapper Pattern
 
