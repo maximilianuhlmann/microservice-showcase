@@ -10,84 +10,59 @@ This service follows a **stateless, event-driven architecture** where:
 
 ## High-Level Architecture
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    External Services                            │
-│  (API Gateway, Storage Service, Compute Service, etc.)          │
-└───────────────────────┬─────────────────────────────────────────┘
-                        │
-                        │ HTTP POST /api/v1/usage-events
-                        │ {customerId, serviceType, quantity, ...}
-                        ▼
-┌─────────────────────────────────────────────────────────────────┐
-│              Usage Billing Service                              │
-│  ┌──────────────────────────────────────────────────────────┐  │
-│  │  Controller Layer                                        │  │
-│  │  - UsageEventController (ingestion)                      │  │
-│  │  - BillingController (calculation & retrieval)           │  │
-│  └───────────────┬──────────────────────────────────────────┘  │
-│                  │                                              │
-│  ┌───────────────▼──────────────────────────────────────────┐  │
-│  │  Mapper Layer                                             │  │
-│  │  - UsageEventMapper (Entity ↔ DTO)                        │  │
-│  │  - BillingRecordMapper (Entity ↔ DTO)                     │  │
-│  └───────────────┬──────────────────────────────────────────┘  │
-│                  │                                              │
-│  ┌───────────────▼──────────────────────────────────────────┐  │
-│  │  Service Layer (Business Logic)                           │  │
-│  │  - UsageEventService (store & retrieve events)            │  │
-│  │  - BillingService (aggregate & calculate)                  │  │
-│  └───────────────┬──────────────────────────────────────────┘  │
-│                  │                                              │
-│  ┌───────────────▼──────────────────────────────────────────┐  │
-│  │  Repository Layer (Data Access)                          │  │
-│  │  - UsageEventRepository                                  │  │
-│  │  - BillingRecordRepository                               │  │
-│  └───────────────┬──────────────────────────────────────────┘  │
-└──────────────────┼──────────────────────────────────────────────┘
-                   │
-                   ▼
-        ┌──────────────────────┐
-        │   PostgreSQL / H2    │
-        │   (via Flyway)       │
-        └──────────────────────┘
+```mermaid
+graph TB
+    External[External Services<br/>API Gateway, Storage, Compute] -->|HTTP POST /api/v1/usage-events| Controller[Controller Layer]
+    
+    subgraph Service["Usage Billing Service"]
+        Controller -->|DTO → Entity| Mapper[Mapper Layer]
+        Mapper -->|Entity → DTO| Controller
+        Mapper -->|Business Logic| ServiceLayer[Service Layer]
+        ServiceLayer -->|Data Access| Repository[Repository Layer]
+    end
+    
+    Repository -->|via Flyway| Database[(PostgreSQL / H2)]
+    
+    Controller -.->|UsageEventController<br/>ingestion| UsageController[UsageEventController]
+    Controller -.->|BillingController<br/>calculation & retrieval| BillingController[BillingController]
+    
+    Mapper -.->|Entity ↔ DTO| UsageMapper[UsageEventMapper]
+    Mapper -.->|Entity ↔ DTO| BillingMapper[BillingRecordMapper]
+    
+    ServiceLayer -.->|store & retrieve events| UsageService[UsageEventService]
+    ServiceLayer -.->|aggregate & calculate| BillingService[BillingService]
+    
+    Repository -.->|Data Access| UsageRepo[UsageEventRepository]
+    Repository -.->|Data Access| BillingRepo[BillingRecordRepository]
 ```
 
 ## Request Lifecycle
 
 ### 1. Recording Usage Events (Write Path)
 
-```
-External Service
-    │
-    │ POST /api/v1/usage-events
-    │ {
-    │   "customerId": "customer-123",
-    │   "serviceType": "api-calls",
-    │   "quantity": 1000,
-    │   "unit": "requests",
-    │   "timestamp": "2024-01-15T10:30:00"
-    │ }
-    ▼
-UsageEventController
-    │
-    │ 1. Validate DTO (@Valid)
-    │ 2. Map DTO → Entity (UsageEventMapper)
-    ▼
-UsageEventService
-    │
-    │ 3. Set timestamps if not provided
-    │ 4. Save to database
-    ▼
-UsageEventRepository (JPA)
-    │
-    │ 5. Persist to usage_events table
-    ▼
-Database
-    │
-    │ 6. Return saved entity with generated UUID
-    ▼
-Response: 201 Created + UsageEventDto
+```mermaid
+sequenceDiagram
+    participant ES as External Service
+    participant UC as UsageEventController
+    participant M as UsageEventMapper
+    participant US as UsageEventService
+    participant UR as UsageEventRepository
+    participant DB as Database
+    
+    ES->>UC: POST /api/v1/usage-events<br/>{customerId, serviceType, quantity, ...}
+    UC->>UC: 1. Validate DTO (@Valid)
+    UC->>M: 2. Map DTO → Entity
+    M-->>UC: UsageEvent entity
+    UC->>US: 3. recordUsage(event)
+    US->>US: 4. Set timestamps if not provided
+    US->>UR: 5. save(event)
+    UR->>DB: 6. Persist to usage_events table
+    DB-->>UR: Saved entity with UUID
+    UR-->>US: UsageEvent with ID
+    US-->>UC: UsageEvent
+    UC->>M: Map Entity → DTO
+    M-->>UC: UsageEventDto
+    UC-->>ES: 201 Created + UsageEventDto
 ```
 
 **Key Points:**
@@ -97,46 +72,46 @@ Response: 201 Created + UsageEventDto
 
 ### 2. Calculating Billing (Read-Aggregate-Write Path)
 
-```
-Billing System / Scheduled Job
-    │
-    │ POST /api/v1/billing/customer-123/calculate?billingPeriod=2024-01-01
-    ▼
-BillingController
-    │
-    │ 1. Extract customerId and billingPeriod
-    ▼
-BillingService.calculateBilling()
-    │
-    │ 2. Check if billing already exists (idempotency)
-    │    └─→ If exists: return existing record
-    │
-    │ 3. Check feature flag (Features.USAGE_AGGREGATION)
-    │    └─→ If disabled: throw exception
-    │
-    │ 4. Query usage events for period
-    │    └─→ UsageEventRepository.findByCustomerIdAndDateRange()
-    │
-    │ 5. Aggregate using streams:
-    │    └─→ events.stream()
-    │         .map(UsageEvent::getQuantity)
-    │         .reduce(BigDecimal.ZERO, BigDecimal::add)
-    │         .multiply(RATE_PER_UNIT)
-    │
-    │ 6. Create BillingRecord entity
-    │
-    │ 7. Save to database
-    ▼
-BillingRecordRepository
-    │
-    │ 8. Persist to billing_records table
-    │    └─→ Unique constraint: (customerId, billingPeriod)
-    ▼
-BillingRecordMapper
-    │
-    │ 9. Map Entity → DTO
-    ▼
-Response: 200 OK + BillingRecordDto
+```mermaid
+sequenceDiagram
+    participant BS as Billing System
+    participant BC as BillingController
+    participant BRM as BillingRecordMapper
+    participant BillingS as BillingService
+    participant FM as FeatureManager
+    participant UER as UsageEventRepository
+    participant BRR as BillingRecordRepository
+    participant DB as Database
+    
+    BS->>BC: POST /api/v1/billing/{customerId}/calculate<br/>?billingPeriod=2024-01-01
+    BC->>BC: 1. Extract customerId and billingPeriod
+    BC->>BillingS: calculateBilling(customerId, period)
+    BillingS->>BRR: 2. Check if billing exists
+    BRR->>DB: Query billing_records
+    alt Billing exists
+        DB-->>BRR: Existing record
+        BRR-->>BillingS: Optional.of(existing)
+        BillingS-->>BC: BillingRecord
+    else Billing not exists
+        DB-->>BRR: Empty
+        BRR-->>BillingS: Optional.empty()
+        BillingS->>FM: 3. Check feature flag
+        FM-->>BillingS: USAGE_AGGREGATION enabled
+        BillingS->>UER: 4. findByCustomerIdAndDateRange()
+        UER->>DB: Query usage_events
+        DB-->>UER: List<UsageEvent>
+        UER-->>BillingS: Usage events
+        BillingS->>BillingS: 5. Aggregate using streams<br/>events.stream()<br/>.map(UsageEvent::getQuantity)<br/>.reduce(BigDecimal.ZERO, BigDecimal::add)<br/>.multiply(RATE_PER_UNIT)
+        BillingS->>BillingS: 6. Create BillingRecord entity
+        BillingS->>BRR: 7. save(billingRecord)
+        BRR->>DB: 8. Persist to billing_records<br/>(unique: customerId, billingPeriod)
+        DB-->>BRR: Saved record
+        BRR-->>BillingS: BillingRecord
+        BillingS-->>BC: BillingRecord
+    end
+    BC->>BRM: 9. Map Entity → DTO
+    BRM-->>BC: BillingRecordDto
+    BC-->>BS: 200 OK + BillingRecordDto
 ```
 
 **Key Points:**
@@ -149,24 +124,18 @@ Response: 200 OK + BillingRecordDto
 
 ### UsageEvent (Time-Series Data)
 
-```
-┌─────────────────────────────────────┐
-│         usage_events                │
-├─────────────────────────────────────┤
-│ id (UUID)                           │
-│ customer_id (VARCHAR)               │
-│ service_type (VARCHAR)              │
-│ quantity (DECIMAL)                  │
-│ unit (VARCHAR)                      │
-│ timestamp (TIMESTAMP)                │
-│ metadata (TEXT/JSON)                 │
-│ created_at (TIMESTAMP)              │
-└─────────────────────────────────────┘
-         │
-         │ Indexes:
-         │ - (customer_id, timestamp)
-         │ - (customer_id, service_type)
-         │ - (timestamp)
+```mermaid
+erDiagram
+    USAGE_EVENTS {
+        UUID id PK
+        VARCHAR customer_id
+        VARCHAR service_type
+        DECIMAL quantity
+        VARCHAR unit
+        TIMESTAMP timestamp
+        TEXT metadata
+        TIMESTAMP created_at
+    }
 ```
 
 **Characteristics:**
@@ -176,20 +145,16 @@ Response: 200 OK + BillingRecordDto
 
 ### BillingRecord (Aggregated Data)
 
-```
-┌─────────────────────────────────────┐
-│      billing_records                │
-├─────────────────────────────────────┤
-│ id (BIGINT)                         │
-│ customer_id (VARCHAR)               │
-│ billing_period (DATE)               │
-│ total_amount (DECIMAL)              │
-│ created_at (TIMESTAMP)              │
-│ updated_at (TIMESTAMP)              │
-└─────────────────────────────────────┘
-         │
-         │ Unique Constraint:
-         │ - (customer_id, billing_period)
+```mermaid
+erDiagram
+    BILLING_RECORDS {
+        BIGINT id PK
+        VARCHAR customer_id
+        DATE billing_period
+        DECIMAL total_amount
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
+    }
 ```
 
 **Characteristics:**

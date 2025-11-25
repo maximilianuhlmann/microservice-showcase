@@ -1,21 +1,15 @@
-package com.microservice.billing;
+package com.microservice.billing.integration;
 
 import com.microservice.billing.config.PostgresTestContainer;
-import org.junit.jupiter.api.Test;
+import io.cucumber.spring.CucumberContextConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 
-@SpringBootTest(properties = {
-    "spring.main.allow-bean-definition-overriding=true",
-    "spring.main.lazy-initialization=true"
-})
+@CucumberContextConfiguration
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
 @ContextConfiguration(initializers = PostgresTestContainer.class)
-class UsageBillingAppTests {
-
-    @Test
-    void contextLoads() {
-    }
+public class CucumberSpringConfiguration {
 }
 

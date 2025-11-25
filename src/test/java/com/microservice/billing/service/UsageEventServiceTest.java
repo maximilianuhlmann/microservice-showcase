@@ -29,22 +29,25 @@ class UsageEventServiceTest {
     @Test
     void shouldRecordUsageEvent() {
         // Given
+        LocalDateTime now = LocalDateTime.now();
         UsageEvent event = UsageEvent.builder()
                 .customerId("customer-1")
                 .serviceType("api-calls")
                 .quantity(new BigDecimal("10.5"))
                 .unit("requests")
-                .timestamp(LocalDateTime.now())
+                .timestamp(now)
                 .build();
 
         UUID eventId = UUID.randomUUID();
+        LocalDateTime createdAt = now.plusSeconds(1);
         UsageEvent savedEvent = UsageEvent.builder()
                 .id(eventId)
                 .customerId("customer-1")
                 .serviceType("api-calls")
                 .quantity(new BigDecimal("10.5"))
                 .unit("requests")
-                .timestamp(event.getTimestamp())
+                .timestamp(now)
+                .createdAt(createdAt)
                 .build();
 
         when(repository.save(any(UsageEvent.class))).thenReturn(savedEvent);
@@ -57,6 +60,7 @@ class UsageEventServiceTest {
         assertEquals(eventId, result.getId());
         assertEquals("customer-1", result.getCustomerId());
         assertEquals("api-calls", result.getServiceType());
+        assertNotNull(result.getCreatedAt());
         verify(repository, times(1)).save(any(UsageEvent.class));
     }
 

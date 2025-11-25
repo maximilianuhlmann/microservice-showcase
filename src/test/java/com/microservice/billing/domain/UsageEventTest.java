@@ -40,12 +40,12 @@ class UsageEventTest {
     void shouldAllowNullCustomerIdInBuilder() {
         // When - Builder allows null (Lombok doesn't validate)
         UsageEvent event = UsageEvent.builder()
-                .customerId(null)
+                    .customerId(null)
                 .serviceType("api-calls")
-                .quantity(new BigDecimal("1"))
+                    .quantity(new BigDecimal("1"))
                 .unit("requests")
-                .timestamp(LocalDateTime.now())
-                .build();
+                    .timestamp(LocalDateTime.now())
+                    .build();
         
         // Then - Builder allows null, validation happens at DTO level or persistence
         assertNotNull(event);
@@ -56,12 +56,12 @@ class UsageEventTest {
     void shouldAllowNullServiceTypeInBuilder() {
         // When - Builder allows null (Lombok doesn't validate)
         UsageEvent event = UsageEvent.builder()
-                .customerId("customer-1")
+                    .customerId("customer-1")
                 .serviceType(null)
-                .quantity(new BigDecimal("1"))
+                    .quantity(new BigDecimal("1"))
                 .unit("requests")
-                .timestamp(LocalDateTime.now())
-                .build();
+                    .timestamp(LocalDateTime.now())
+                    .build();
         
         // Then - Builder allows null, validation happens at DTO level
         assertNotNull(event);
@@ -72,12 +72,12 @@ class UsageEventTest {
     void shouldAllowNegativeQuantityInBuilder() {
         // When - Builder allows negative (validation happens at DTO level)
         UsageEvent event = UsageEvent.builder()
-                .customerId("customer-1")
+                    .customerId("customer-1")
                 .serviceType("api-calls")
-                .quantity(new BigDecimal("-1"))
+                    .quantity(new BigDecimal("-1"))
                 .unit("requests")
-                .timestamp(LocalDateTime.now())
-                .build();
+                    .timestamp(LocalDateTime.now())
+                    .build();
         
         // Then - Builder allows negative, but DTO validation will catch it
         assertNotNull(event);
@@ -88,12 +88,12 @@ class UsageEventTest {
     void shouldAllowNullQuantityInBuilder() {
         // When - Builder allows null (Lombok doesn't validate)
         UsageEvent event = UsageEvent.builder()
-                .customerId("customer-1")
+                    .customerId("customer-1")
                 .serviceType("api-calls")
-                .quantity(null)
+                    .quantity(null)
                 .unit("requests")
-                .timestamp(LocalDateTime.now())
-                .build();
+                    .timestamp(LocalDateTime.now())
+                    .build();
         
         // Then - Builder allows null, validation happens at DTO level
         assertNotNull(event);

@@ -9,10 +9,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
-/**
- * Service for managing usage events.
- * Follows TDD principles - tests written first.
- */
 @Slf4j
 @Service
 @RequiredArgsConstructor

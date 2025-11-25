@@ -18,10 +18,6 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Map;
 
-/**
- * REST Controller for billing operations.
- * Provides endpoints for calculating and retrieving billing records.
- */
 @Slf4j
 @RestController
 @RequestMapping("/api/v1/billing")
@@ -32,12 +28,7 @@ public class BillingController {
     private final BillingService billingService;
     private final BillingRecordMapper billingRecordMapper;
 
-    @Operation(
-        summary = "Calculate billing for a customer",
-        description = "Calculates billing for a customer for a specific billing period. " +
-                     "Aggregates all usage events and applies pricing. " +
-                     "If billing already exists, returns the existing record."
-    )
+    @Operation(summary = "Calculate billing for a customer")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Billing calculated successfully"),
         @ApiResponse(responseCode = "400", description = "Invalid input data")
@@ -54,19 +45,16 @@ public class BillingController {
         return ResponseEntity.ok(billingRecordMapper.toDto(record));
     }
 
-    @Operation(
-        summary = "Get billing record",
-        description = "Retrieves an existing billing record for a customer and period."
-    )
+    @Operation(summary = "Get billing record")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Billing record found"),
         @ApiResponse(responseCode = "404", description = "Billing record not found")
     })
     @GetMapping("/{customerId}")
     public ResponseEntity<BillingRecordDto> getBillingRecord(
-            @Parameter(description = "Customer identifier", required = true)
+            @Parameter(description = "Customer identifier", required = true, example = "customer-123")
             @PathVariable String customerId,
-            @Parameter(description = "Billing period", required = true)
+            @Parameter(description = "Billing period", required = true, example = "2024-01-01")
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate billingPeriod) {
         
         log.info("Retrieving billing record for customer: {}, period: {}", customerId, billingPeriod);
@@ -76,14 +64,10 @@ public class BillingController {
                 .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND).build());
     }
 
-    @Operation(
-        summary = "Get usage aggregation by service type",
-        description = "Returns aggregated usage quantities grouped by service type. " +
-                     "Demonstrates advanced stream operations with grouping."
-    )
+    @Operation(summary = "Get usage aggregation by service type")
     @GetMapping("/{customerId}/usage-by-service")
     public ResponseEntity<Map<String, BigDecimal>> getUsageByServiceType(
-            @Parameter(description = "Customer identifier", required = true)
+            @Parameter(description = "Customer identifier", required = true, example = "customer-123")
             @PathVariable String customerId) {
         
         log.info("Aggregating usage by service type for customer: {}", customerId);
@@ -91,13 +75,10 @@ public class BillingController {
         return ResponseEntity.ok(aggregation);
     }
 
-    @Operation(
-        summary = "Get total usage quantity",
-        description = "Returns the total usage quantity across all service types for a customer."
-    )
+    @Operation(summary = "Get total usage quantity")
     @GetMapping("/{customerId}/total-usage")
     public ResponseEntity<BigDecimal> getTotalUsage(
-            @Parameter(description = "Customer identifier", required = true)
+            @Parameter(description = "Customer identifier", required = true, example = "customer-123")
             @PathVariable String customerId) {
         
         log.info("Getting total usage for customer: {}", customerId);

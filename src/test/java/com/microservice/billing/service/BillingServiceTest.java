@@ -46,21 +46,16 @@ class BillingServiceTest {
     @MockBean
     private FeatureManager featureManager;
 
-    // Mappers are provided by ServiceTestConfig as @Primary mocks
-    // We can override them with @MockBean if needed for specific test behavior
-
     @SpyBean
     private BillingService billingService;
 
     @BeforeEach
     void setUp() {
-        // Enable USAGE_AGGREGATION feature by default for tests
         when(featureManager.isActive(Features.USAGE_AGGREGATION)).thenReturn(true);
     }
 
     @Test
     void shouldCalculateBillingForCustomer() {
-        // Given
         String customerId = "customer-1";
         LocalDate billingPeriod = LocalDate.of(2024, 1, 1);
         LocalDateTime periodStart = billingPeriod.atStartOfDay();
@@ -91,21 +86,17 @@ class BillingServiceTest {
         when(billingRecordRepository.save(any(BillingRecord.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
-        // When
         BillingRecord result = billingService.calculateBilling(customerId, billingPeriod);
 
-        // Then
         assertNotNull(result);
         assertEquals(customerId, result.getCustomerId());
         assertEquals(billingPeriod, result.getBillingPeriod());
-        // Simple calculation: sum of quantities * 0.01 (mock rate)
         assertEquals(new BigDecimal("0.30"), result.getTotalAmount());
         verify(billingRecordRepository, times(1)).save(any(BillingRecord.class));
     }
 
     @Test
     void shouldReturnExistingBillingRecordIfAlreadyCalculated() {
-        // Given
         String customerId = "customer-1";
         LocalDate billingPeriod = LocalDate.of(2024, 1, 1);
 
@@ -119,10 +110,8 @@ class BillingServiceTest {
         when(billingRecordRepository.findByCustomerIdAndBillingPeriod(customerId, billingPeriod))
                 .thenReturn(Optional.of(existing));
 
-        // When
         BillingRecord result = billingService.calculateBilling(customerId, billingPeriod);
 
-        // Then
         assertNotNull(result);
         assertEquals(existing.getId(), result.getId());
         assertEquals(new BigDecimal("100.50"), result.getTotalAmount());
@@ -131,7 +120,6 @@ class BillingServiceTest {
 
     @Test
     void shouldGetBillingRecordByCustomerAndPeriod() {
-        // Given
         String customerId = "customer-1";
         LocalDate billingPeriod = LocalDate.of(2024, 1, 1);
 
@@ -145,10 +133,8 @@ class BillingServiceTest {
         when(billingRecordRepository.findByCustomerIdAndBillingPeriod(customerId, billingPeriod))
                 .thenReturn(Optional.of(record));
 
-        // When
         Optional<BillingRecord> result = billingService.getBillingRecord(customerId, billingPeriod);
 
-        // Then
         assertTrue(result.isPresent());
         assertEquals(customerId, result.get().getCustomerId());
     }

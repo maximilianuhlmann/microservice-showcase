@@ -16,13 +16,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-/**
- * REST Controller for managing usage events.
- * Follows MVC pattern - Controller layer.
- * 
- * Use Case: This endpoint allows external services to submit usage data
- * (e.g., API calls, storage, compute time) for billing purposes.
- */
 @Slf4j
 @RestController
 @RequestMapping("/api/v1/usage-events")
@@ -33,12 +26,7 @@ public class UsageEventController {
     private final UsageEventService usageEventService;
     private final UsageEventMapper usageEventMapper;
 
-    @Operation(
-        summary = "Record a usage event",
-        description = "Records a new usage event for billing purposes. " +
-                     "This is the primary endpoint for submitting usage data. " +
-                     "Usage events are aggregated later to calculate billing amounts."
-    )
+    @Operation(summary = "Record a usage event")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "201", description = "Usage event created successfully"),
         @ApiResponse(responseCode = "400", description = "Invalid input data")
@@ -53,11 +41,7 @@ public class UsageEventController {
                 .body(usageEventMapper.toDto(saved));
     }
 
-    @Operation(
-        summary = "Get usage events by customer",
-        description = "Retrieves all usage events for a specific customer. " +
-                     "Useful for auditing and debugging billing calculations."
-    )
+    @Operation(summary = "Get usage events by customer")
     @GetMapping("/customer/{customerId}")
     public ResponseEntity<List<UsageEventDto>> getUsageEventsByCustomer(
             @Parameter(description = "Customer identifier", required = true, example = "customer-123")
@@ -67,11 +51,7 @@ public class UsageEventController {
         return ResponseEntity.ok(usageEventMapper.toDtoList(events));
     }
 
-    @Operation(
-        summary = "Get usage events by customer and service type",
-        description = "Retrieves usage events filtered by customer and service type. " +
-                     "Useful for analyzing usage patterns by service category."
-    )
+    @Operation(summary = "Get usage events by customer and service type")
     @GetMapping("/customer/{customerId}/service/{serviceType}")
     public ResponseEntity<List<UsageEventDto>> getUsageEventsByCustomerAndServiceType(
             @Parameter(description = "Customer identifier", required = true, example = "customer-123")

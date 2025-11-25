@@ -3,12 +3,6 @@ package com.microservice.billing.config;
 import org.togglz.core.Feature;
 import org.togglz.core.annotation.Label;
 
-/**
- * Feature flags enum using Togglz.
- * This allows toggling features on/off at runtime.
- * 
- * Note: Use FeatureManager.isActive(Features.XXX) instead of static API.
- */
 public enum Features implements Feature {
 
     @Label("Real-time Billing")

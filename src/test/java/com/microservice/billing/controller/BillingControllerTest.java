@@ -21,7 +21,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(controllers = BillingController.class, excludeAutoConfiguration = {
-        org.togglz.spring.boot.actuate.autoconfigure.TogglzAutoConfiguration.class
+        org.togglz.spring.boot.actuate.autoconfigure.TogglzAutoConfiguration.class,
+        org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration.class
 })
 class BillingControllerTest {
 
