@@ -1,0 +1,23 @@
+meta {
+  name: Record Usage Event - Missing Fields
+  type: http
+  seq: 8
+}
+
+post {
+  url: {{baseUrl}}/api/v1/usage-events
+  body: json
+  auth: none
+}
+
+headers {
+  X-API-Key: {{apiKey}}
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "customerId": "{{customerId}}"
+  }
+}
+

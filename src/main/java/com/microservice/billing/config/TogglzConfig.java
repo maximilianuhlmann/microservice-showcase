@@ -5,29 +5,34 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.togglz.core.manager.FeatureManager;
 import org.togglz.core.manager.FeatureManagerBuilder;
-import org.togglz.core.repository.StateRepository;
+import org.togglz.core.repository.FeatureState;
 import org.togglz.core.repository.mem.InMemoryStateRepository;
-import org.togglz.core.user.FeatureUser;
 import org.togglz.core.user.SimpleFeatureUser;
-import org.togglz.core.user.UserProvider;
 
 @Configuration
 public class TogglzConfig {
 
     @Bean
-    public FeatureManager featureManager() {
-        final StateRepository stateRepository = new InMemoryStateRepository();
+    public FeatureManager featureManager(final TogglzProperties togglzProperties) {
+        final InMemoryStateRepository stateRepository = new InMemoryStateRepository();
+        
+        // Initialize feature states from properties
+        setFeatureState(stateRepository, Features.REALTIME_BILLING, togglzProperties.isRealtimeBilling());
+        setFeatureState(stateRepository, Features.USAGE_AGGREGATION, togglzProperties.isUsageAggregation());
+        setFeatureState(stateRepository, Features.INVOICE_GENERATION, togglzProperties.isInvoiceGeneration());
+        setFeatureState(stateRepository, Features.WEBHOOK_NOTIFICATIONS, togglzProperties.isWebhookNotifications());
+        setFeatureState(stateRepository, Features.ADVANCED_METRICS, togglzProperties.isAdvancedMetrics());
         
         return new FeatureManagerBuilder()
                 .featureEnum(Features.class)
                 .stateRepository(stateRepository)
-                .userProvider(new UserProvider() {
-                    @Override
-                    public FeatureUser getCurrentUser() {
-                        return new SimpleFeatureUser("system", true);
-                    }
-                })
+                .userProvider(() -> new SimpleFeatureUser("system", true))
                 .build();
+    }
+    
+    private void setFeatureState(final InMemoryStateRepository repository, final Features feature, final boolean enabled) {
+        final FeatureState state = new FeatureState(feature, enabled);
+        repository.setFeatureState(state);
     }
 
     @Bean

@@ -1,0 +1,31 @@
+meta {
+  name: Get Billing Record - Invalid Billing Period Format
+  type: http
+  seq: 11
+}
+
+get {
+  url: {{baseUrl}}/api/v1/billing/{{customerId}}?billingPeriod=2024-01-01
+  body: none
+  auth: none
+}
+
+headers {
+  X-API-Key: {{apiKey}}
+}
+
+docs {
+  # Error Handling Test: Invalid Billing Period Format
+  
+  This request tests error handling by providing an invalid billing period format.
+  The billing period should be in YYYY-MM format (e.g., "2024-01"), but this
+  request uses "2024-01-01" which includes the day.
+  
+  **Expected Result:**
+  - Status: 400 Bad Request
+  - Error: "Bad Request"
+  - Error message: "Invalid date format. Received: '2024-01-01'. Expected format: YYYY-MM (e.g., 2024-01)"
+  
+  **Note:** This should return a proper 400 error, not a 500 Internal Server Error.
+}
+

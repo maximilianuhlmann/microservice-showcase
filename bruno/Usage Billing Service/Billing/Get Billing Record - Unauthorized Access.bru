@@ -1,0 +1,31 @@
+meta {
+  name: Get Billing Record - Unauthorized Access
+  type: http
+  seq: 8
+}
+
+get {
+  url: {{baseUrl}}/api/v1/billing/customer-456?billingPeriod={{billingPeriod}}
+  body: none
+  auth: none
+}
+
+headers {
+  X-API-Key: {{apiKey}}
+}
+
+docs {
+  # Security Test: Unauthorized Customer Access
+  
+  This request tests customer isolation by attempting to access billing records
+  for a different customer (customer-456) while authenticated as customer-123.
+  
+  **Expected Result:**
+  - Status: 403 Forbidden
+  - Error: "Forbidden"
+  - Error message: "Access denied: You can only access your own data"
+  
+  **Note:** The API key `dev-api-key-123` is mapped to `customer-123` in the database
+  (via migration V4). Attempting to access `customer-456` should be denied with a 403 error.
+}
+

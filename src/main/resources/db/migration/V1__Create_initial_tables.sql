@@ -3,7 +3,7 @@
 
 -- Table: usage_events
 CREATE TABLE IF NOT EXISTS usage_events (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id UUID PRIMARY KEY,
     customer_id VARCHAR(255) NOT NULL,
     service_type VARCHAR(255) NOT NULL,
     quantity DECIMAL(19, 4) NOT NULL,

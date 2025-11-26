@@ -8,7 +8,6 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.test.context.TestPropertySource;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -29,7 +28,7 @@ class BillingRecordRepositoryTest {
     void shouldSaveBillingRecord() {
         BillingRecord record = BillingRecord.builder()
                 .customerId("customer-1")
-                .billingPeriod(LocalDate.of(2024, 1, 1))
+                .billingPeriod("2024-01")
                 .totalAmount(new BigDecimal("100.50"))
                 .build();
 
@@ -37,6 +36,7 @@ class BillingRecordRepositoryTest {
 
         assertNotNull(saved.getId());
         assertEquals("customer-1", saved.getCustomerId());
+        assertEquals("2024-01", saved.getBillingPeriod());
         assertEquals(new BigDecimal("100.50"), saved.getTotalAmount());
     }
 
@@ -44,7 +44,7 @@ class BillingRecordRepositoryTest {
     void shouldFindBillingRecordByCustomerIdAndPeriod() {
         BillingRecord record = BillingRecord.builder()
                 .customerId("customer-1")
-                .billingPeriod(LocalDate.of(2024, 1, 1))
+                .billingPeriod("2024-01")
                 .totalAmount(new BigDecimal("100.50"))
                 .build();
 
@@ -52,11 +52,12 @@ class BillingRecordRepositoryTest {
 
         Optional<BillingRecord> found = repository.findByCustomerIdAndBillingPeriod(
                 "customer-1",
-                LocalDate.of(2024, 1, 1)
+                "2024-01"
         );
 
         assertTrue(found.isPresent());
         assertEquals("customer-1", found.get().getCustomerId());
+        assertEquals("2024-01", found.get().getBillingPeriod());
         assertEquals(new BigDecimal("100.50"), found.get().getTotalAmount());
     }
 
@@ -64,7 +65,7 @@ class BillingRecordRepositoryTest {
     void shouldReturnEmptyWhenRecordNotFound() {
         Optional<BillingRecord> found = repository.findByCustomerIdAndBillingPeriod(
                 "customer-999",
-                LocalDate.of(2024, 1, 1)
+                "2024-01"
         );
 
         assertFalse(found.isPresent());

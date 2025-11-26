@@ -1,9 +1,9 @@
 package com.microservice.billing.domain;
 
+import com.microservice.billing.exception.DomainValidationException;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -12,7 +12,7 @@ class BillingRecordTest {
     @Test
     void shouldCreateBillingRecordWithRequiredFields() {
         String customerId = "customer-123";
-        LocalDate billingPeriod = LocalDate.of(2024, 1, 1);
+        String billingPeriod = "2024-01";
         BigDecimal totalAmount = new BigDecimal("100.50");
 
         BillingRecord record = BillingRecord.builder()
@@ -28,34 +28,50 @@ class BillingRecordTest {
     }
 
     @Test
-    void shouldRejectNullCustomerId() {
+    void shouldRejectNullCustomerId() throws Exception {
         BillingRecord record = BillingRecord.builder()
                 .customerId(null)
-                .billingPeriod(LocalDate.now())
+                .billingPeriod("2024-01")
                 .totalAmount(new BigDecimal("100"))
                 .build();
         
-        assertNotNull(record);
-        assertNull(record.getCustomerId());
+        Exception exception = assertThrows(Exception.class,
+                () -> {
+                    java.lang.reflect.Method method = BillingRecord.class.getDeclaredMethod("onCreate");
+                    method.setAccessible(true);
+                    method.invoke(record);
+                });
+        
+        DomainValidationException domainException = (DomainValidationException) exception.getCause();
+        assertEquals("customerId", domainException.getFieldName());
+        assertTrue(domainException.getMessage().contains("Customer ID cannot be null or blank"));
     }
 
     @Test
-    void shouldRejectNegativeAmount() {
+    void shouldRejectNegativeAmount() throws Exception {
         BillingRecord record = BillingRecord.builder()
                 .customerId("customer-1")
-                .billingPeriod(LocalDate.now())
+                .billingPeriod("2024-01")
                 .totalAmount(new BigDecimal("-100"))
                 .build();
         
-        assertNotNull(record);
-        assertTrue(record.getTotalAmount().compareTo(BigDecimal.ZERO) < 0);
+        Exception exception = assertThrows(Exception.class,
+                () -> {
+                    java.lang.reflect.Method method = BillingRecord.class.getDeclaredMethod("onCreate");
+                    method.setAccessible(true);
+                    method.invoke(record);
+                });
+        
+        DomainValidationException domainException = (DomainValidationException) exception.getCause();
+        assertEquals("totalAmount", domainException.getFieldName());
+        assertTrue(domainException.getMessage().contains("Total amount cannot be negative"));
     }
 
     @Test
     void shouldAllowZeroAmount() {
         BillingRecord record = BillingRecord.builder()
                 .customerId("customer-1")
-                .billingPeriod(LocalDate.now())
+                .billingPeriod("2024-01")
                 .totalAmount(BigDecimal.ZERO)
                 .build();
 

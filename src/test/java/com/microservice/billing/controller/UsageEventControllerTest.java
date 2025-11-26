@@ -15,8 +15,13 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+import java.util.List;
+
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -35,8 +40,77 @@ class UsageEventControllerTest {
     @MockBean
     private UsageEventMapper usageEventMapper;
 
+    @MockBean
+    private com.microservice.billing.service.CustomerContextService customerContextService;
+
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Test
+    void shouldGetUsageEventsByCustomer() throws Exception {
+        String customerId = "customer-1";
+        UsageEvent event1 = UsageEvent.builder()
+                .id(UUID.randomUUID())
+                .customerId(customerId)
+                .serviceType("api-calls")
+                .quantity(new BigDecimal("10"))
+                .unit("requests")
+                .timestamp(LocalDateTime.now())
+                .build();
+
+        UsageEvent event2 = UsageEvent.builder()
+                .id(UUID.randomUUID())
+                .customerId(customerId)
+                .serviceType("storage")
+                .quantity(new BigDecimal("20"))
+                .unit("gb")
+                .timestamp(LocalDateTime.now())
+                .build();
+
+        when(usageEventService.getUsageEventsByCustomer(customerId))
+                .thenReturn(List.of(event1, event2));
+        when(usageEventMapper.toDtoList(anyList())).thenReturn(List.of(
+                UsageEventDto.builder().customerId(customerId).serviceType("api-calls").build(),
+                UsageEventDto.builder().customerId(customerId).serviceType("storage").build()
+        ));
+
+        mockMvc.perform(get("/api/v1/usage-events/customer/{customerId}", customerId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(jsonPath("$.length()").value(2));
+
+        verify(customerContextService).verifyCustomerAccess(customerId);
+        verify(usageEventService).getUsageEventsByCustomer(customerId);
+    }
+
+    @Test
+    void shouldGetUsageEventsByCustomerAndServiceType() throws Exception {
+        String customerId = "customer-1";
+        String serviceType = "api-calls";
+        UsageEvent event = UsageEvent.builder()
+                .id(UUID.randomUUID())
+                .customerId(customerId)
+                .serviceType(serviceType)
+                .quantity(new BigDecimal("10"))
+                .unit("requests")
+                .timestamp(LocalDateTime.now())
+                .build();
+
+        when(usageEventService.getUsageEventsByCustomerAndServiceType(customerId, serviceType))
+                .thenReturn(List.of(event));
+        when(usageEventMapper.toDtoList(anyList())).thenReturn(List.of(
+                UsageEventDto.builder().customerId(customerId).serviceType(serviceType).build()
+        ));
+
+        mockMvc.perform(get("/api/v1/usage-events/customer/{customerId}/service/{serviceType}", customerId, serviceType))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].serviceType").value(serviceType));
+
+        verify(customerContextService).verifyCustomerAccess(customerId);
+        verify(usageEventService).getUsageEventsByCustomerAndServiceType(customerId, serviceType);
+    }
 
     @Test
     void shouldRecordUsageEvent() throws Exception {

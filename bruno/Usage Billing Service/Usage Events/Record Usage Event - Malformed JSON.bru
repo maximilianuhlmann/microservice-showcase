@@ -1,0 +1,25 @@
+meta {
+  name: Record Usage Event - Malformed JSON
+  type: http
+  seq: 9
+}
+
+post {
+  url: {{baseUrl}}/api/v1/usage-events
+  body: text
+  auth: none
+}
+
+headers {
+  X-API-Key: {{apiKey}}
+  Content-Type: application/json
+}
+
+body:text {
+  {
+    "customerId": "{{customerId}}",
+    "serviceType": "api-calls",
+    "quantity": 100,
+    "unit": "requests"
+}
+

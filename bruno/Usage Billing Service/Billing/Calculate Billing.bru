@@ -1,0 +1,18 @@
+meta {
+  name: Calculate Billing
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{baseUrl}}/api/v1/billing/{{customerId}}/calculate?billingPeriod={{billingPeriod}}
+  body: none
+  auth: none
+}
+
+headers {
+  X-API-Key: {{apiKey}}
+}
+
+
+

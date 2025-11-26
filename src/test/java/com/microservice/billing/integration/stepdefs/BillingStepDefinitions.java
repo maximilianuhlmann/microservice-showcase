@@ -15,7 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -47,14 +47,14 @@ public class BillingStepDefinitions {
         this.customerId = customer;
         this.billingPeriod = period;
         
-        LocalDate periodDate = LocalDate.parse(period);
+        YearMonth periodYearMonth = YearMonth.parse(period);
         UsageEvent event1 = UsageEvent.builder()
                 .id(UUID.randomUUID())
                 .customerId(customer)
                 .serviceType("api-calls")
                 .quantity(new BigDecimal("100.0"))
                 .unit("requests")
-                .timestamp(periodDate.plusDays(5).atStartOfDay())
+                .timestamp(periodYearMonth.atDay(5).atStartOfDay())
                 .build();
         
         UsageEvent event2 = UsageEvent.builder()
@@ -63,7 +63,7 @@ public class BillingStepDefinitions {
                 .serviceType("api-calls")
                 .quantity(new BigDecimal("200.0"))
                 .unit("requests")
-                .timestamp(periodDate.plusDays(15).atStartOfDay())
+                .timestamp(periodYearMonth.atDay(15).atStartOfDay())
                 .build();
         
         usageEventRepository.save(event1);
@@ -86,7 +86,7 @@ public class BillingStepDefinitions {
         assertNotNull(response.getBody());
         BillingRecordDto billingRecord = response.getBody();
         assertEquals(customerId, billingRecord.getCustomerId());
-        assertEquals(billingPeriod, billingRecord.getBillingPeriod().toString());
+        assertEquals(billingPeriod, billingRecord.getBillingPeriod());
         assertNotNull(billingRecord.getTotalAmount());
         assertTrue(billingRecord.getTotalAmount().compareTo(BigDecimal.ZERO) > 0);
     }
@@ -97,6 +97,15 @@ public class BillingStepDefinitions {
         BigDecimal expected = new BigDecimal(expectedAmount);
         assertEquals(0, expected.compareTo(response.getBody().getTotalAmount()),
                 "Expected total amount: " + expectedAmount);
+    }
+
+    @Then("the total amount should be greater than {string}")
+    public void theTotalAmountShouldBeGreaterThan(String expectedAmount) {
+        assertNotNull(response.getBody());
+        BigDecimal expected = new BigDecimal(expectedAmount);
+        BigDecimal actual = response.getBody().getTotalAmount();
+        assertTrue(actual.compareTo(expected) > 0,
+                "Expected total amount to be greater than " + expectedAmount + ", but was " + actual);
     }
 
     @When("I retrieve the billing record for customer {string} and period {string}")

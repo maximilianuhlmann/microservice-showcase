@@ -11,7 +11,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -35,36 +35,41 @@ class BillingControllerTest {
     @MockBean
     private BillingRecordMapper billingRecordMapper;
 
+    @MockBean
+    private com.microservice.billing.service.CustomerContextService customerContextService;
+
     @Test
     void shouldCalculateBilling() throws Exception {
         // Given
         String customerId = "customer-1";
-        LocalDate billingPeriod = LocalDate.of(2024, 1, 1);
+        YearMonth billingPeriod = YearMonth.of(2024, 1);
 
         BillingRecord record = BillingRecord.builder()
                 .id(1L)
                 .customerId(customerId)
-                .billingPeriod(billingPeriod)
+                .billingPeriod("2024-01")
                 .totalAmount(new BigDecimal("100.50"))
                 .build();
 
         BillingRecordDto dto = BillingRecordDto.builder()
                 .id(1L)
                 .customerId(customerId)
-                .billingPeriod(billingPeriod)
+                .billingPeriod("2024-01")
                 .totalAmount(new BigDecimal("100.50"))
                 .build();
 
         when(billingService.calculateBilling(customerId, billingPeriod)).thenReturn(record);
-        when(billingRecordMapper.toDto(any(BillingRecord.class))).thenReturn(dto);
+        when(billingService.getBillingBreakdown(1L)).thenReturn(java.util.Collections.emptyList());
+        when(billingRecordMapper.toDto(any(BillingRecord.class), any())).thenReturn(dto);
 
         // When & Then
         mockMvc.perform(post("/api/v1/billing/{customerId}/calculate", customerId)
-                        .param("billingPeriod", billingPeriod.toString())
+                        .param("billingPeriod", "2024-01")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(1L))
                 .andExpect(jsonPath("$.customerId").value(customerId))
+                .andExpect(jsonPath("$.billingPeriod").value("2024-01"))
                 .andExpect(jsonPath("$.totalAmount").value(100.50));
     }
 
@@ -72,33 +77,35 @@ class BillingControllerTest {
     void shouldGetBillingRecord() throws Exception {
         // Given
         String customerId = "customer-1";
-        LocalDate billingPeriod = LocalDate.of(2024, 1, 1);
+        YearMonth billingPeriod = YearMonth.of(2024, 1);
 
         BillingRecord record = BillingRecord.builder()
                 .id(1L)
                 .customerId(customerId)
-                .billingPeriod(billingPeriod)
+                .billingPeriod("2024-01")
                 .totalAmount(new BigDecimal("100.50"))
                 .build();
 
         BillingRecordDto dto = BillingRecordDto.builder()
                 .id(1L)
                 .customerId(customerId)
-                .billingPeriod(billingPeriod)
+                .billingPeriod("2024-01")
                 .totalAmount(new BigDecimal("100.50"))
                 .build();
 
         when(billingService.getBillingRecord(customerId, billingPeriod))
                 .thenReturn(Optional.of(record));
-        when(billingRecordMapper.toDto(any(BillingRecord.class))).thenReturn(dto);
+        when(billingService.getBillingBreakdown(1L)).thenReturn(java.util.Collections.emptyList());
+        when(billingRecordMapper.toDto(any(BillingRecord.class), any())).thenReturn(dto);
 
         // When & Then
         mockMvc.perform(get("/api/v1/billing/{customerId}", customerId)
-                        .param("billingPeriod", billingPeriod.toString())
+                        .param("billingPeriod", "2024-01")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(1L))
                 .andExpect(jsonPath("$.customerId").value(customerId))
+                .andExpect(jsonPath("$.billingPeriod").value("2024-01"))
                 .andExpect(jsonPath("$.totalAmount").value(100.50));
     }
 
@@ -106,14 +113,14 @@ class BillingControllerTest {
     void shouldReturnNotFoundWhenBillingRecordNotExists() throws Exception {
         // Given
         String customerId = "customer-1";
-        LocalDate billingPeriod = LocalDate.of(2024, 1, 1);
+        YearMonth billingPeriod = YearMonth.of(2024, 1);
 
         when(billingService.getBillingRecord(customerId, billingPeriod))
                 .thenReturn(Optional.empty());
 
         // When & Then
         mockMvc.perform(get("/api/v1/billing/{customerId}", customerId)
-                        .param("billingPeriod", billingPeriod.toString())
+                        .param("billingPeriod", "2024-01")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound());
     }

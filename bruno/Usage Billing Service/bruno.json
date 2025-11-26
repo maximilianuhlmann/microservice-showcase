@@ -1,0 +1,12 @@
+{
+  "version": "1",
+  "name": "Usage Billing Service",
+  "type": "collection",
+  "ignore": [
+    "node_modules",
+    ".git"
+  ]
+}
+
+
+

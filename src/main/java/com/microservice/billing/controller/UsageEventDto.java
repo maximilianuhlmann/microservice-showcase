@@ -43,11 +43,11 @@ public class UsageEventDto {
     @jakarta.validation.constraints.Size(max = 50, message = "Unit must not exceed 50 characters")
     private String unit;
 
-    @Schema(description = "Timestamp when the usage occurred", example = "2024-01-15T10:30:00")
+    @Schema(description = "Timestamp when the usage occurred. If not provided, defaults to current time.", example = "2024-01-15T10:30:00")
     @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME)
     private LocalDateTime timestamp;
 
-    @Schema(description = "Additional metadata as JSON string", example = "{\"endpoint\":\"/api/users\"}")
+    @Schema(description = "Optional metadata as JSON string. Used for audit trail. Not used in billing calculations.", example = "{\"endpoint\":\"/api/users\",\"method\":\"GET\"}")
     @jakarta.validation.constraints.Size(max = 1000, message = "Metadata must not exceed 1000 characters")
     private String metadata;
 }
