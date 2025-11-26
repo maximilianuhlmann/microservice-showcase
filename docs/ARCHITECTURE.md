@@ -11,29 +11,29 @@ This service follows a **stateless, event-driven architecture** where:
 ## High-Level Architecture
 
 ```mermaid
-graph TB
-    External[External Services<br/>API Gateway, Storage, Compute] -->|HTTP POST /api/v1/usage-events| Controller[Controller Layer]
+flowchart TB
+    External["External Services: API Gateway, Storage, Compute"] -->|HTTP POST /api/v1/usage-events| Controller["Controller Layer"]
     
     subgraph Service["Usage Billing Service"]
-        Controller -->|DTO → Entity| Mapper[Mapper Layer]
-        Mapper -->|Entity → DTO| Controller
-        Mapper -->|Business Logic| ServiceLayer[Service Layer]
-        ServiceLayer -->|Data Access| Repository[Repository Layer]
+        Controller -->|DTO to Entity| Mapper["Mapper Layer"]
+        Mapper -->|Entity to DTO| Controller
+        Mapper -->|Business Logic| ServiceLayer["Service Layer"]
+        ServiceLayer -->|Data Access| Repository["Repository Layer"]
     end
     
-    Repository -->|via Flyway| Database[(PostgreSQL / H2)]
+    Repository -->|via Flyway| Database[("PostgreSQL / H2")]
     
-    Controller -.->|UsageEventController<br/>ingestion| UsageController[UsageEventController]
-    Controller -.->|BillingController<br/>calculation & retrieval| BillingController[BillingController]
+    Controller -.->|UsageEventController ingestion| UsageController["UsageEventController"]
+    Controller -.->|BillingController calculation & retrieval| BillingController["BillingController"]
     
-    Mapper -.->|Entity ↔ DTO| UsageMapper[UsageEventMapper]
-    Mapper -.->|Entity ↔ DTO| BillingMapper[BillingRecordMapper]
+    Mapper -.->|Entity to/from DTO| UsageMapper["UsageEventMapper"]
+    Mapper -.->|Entity to/from DTO| BillingMapper["BillingRecordMapper"]
     
-    ServiceLayer -.->|store & retrieve events| UsageService[UsageEventService]
-    ServiceLayer -.->|aggregate & calculate| BillingService[BillingService]
+    ServiceLayer -.->|store & retrieve events| UsageService["UsageEventService"]
+    ServiceLayer -.->|aggregate & calculate| BillingService["BillingService"]
     
-    Repository -.->|Data Access| UsageRepo[UsageEventRepository]
-    Repository -.->|Data Access| BillingRepo[BillingRecordRepository]
+    Repository -.->|Data Access| UsageRepo["UsageEventRepository"]
+    Repository -.->|Data Access| BillingRepo["BillingRecordRepository"]
 ```
 
 ## Request Lifecycle
@@ -49,9 +49,9 @@ sequenceDiagram
     participant UR as UsageEventRepository
     participant DB as Database
     
-    ES->>UC: POST /api/v1/usage-events<br/>{customerId, serviceType, quantity, ...}
+    ES->>UC: POST /api/v1/usage-events with customerId, serviceType, quantity
     UC->>UC: 1. Validate DTO (@Valid)
-    UC->>M: 2. Map DTO → Entity
+    UC->>M: 2. Map DTO to Entity
     M-->>UC: UsageEvent entity
     UC->>US: 3. recordUsage(event)
     US->>US: 4. Set timestamps if not provided
@@ -60,7 +60,7 @@ sequenceDiagram
     DB-->>UR: Saved entity with UUID
     UR-->>US: UsageEvent with ID
     US-->>UC: UsageEvent
-    UC->>M: Map Entity → DTO
+    UC->>M: Map Entity to DTO
     M-->>UC: UsageEventDto
     UC-->>ES: 201 Created + UsageEventDto
 ```
@@ -83,7 +83,7 @@ sequenceDiagram
     participant BRR as BillingRecordRepository
     participant DB as Database
     
-    BS->>BC: POST /api/v1/billing/{customerId}/calculate<br/>?billingPeriod=2024-01-01
+    BS->>BC: POST /api/v1/billing/{customerId}/calculate?billingPeriod=2024-01-01
     BC->>BC: 1. Extract customerId and billingPeriod
     BC->>BillingS: calculateBilling(customerId, period)
     BillingS->>BRR: 2. Check if billing exists
@@ -99,17 +99,17 @@ sequenceDiagram
         FM-->>BillingS: USAGE_AGGREGATION enabled
         BillingS->>UER: 4. findByCustomerIdAndDateRange()
         UER->>DB: Query usage_events
-        DB-->>UER: List<UsageEvent>
+        DB-->>UER: List of UsageEvent
         UER-->>BillingS: Usage events
-        BillingS->>BillingS: 5. Aggregate using streams<br/>events.stream()<br/>.map(UsageEvent::getQuantity)<br/>.reduce(BigDecimal.ZERO, BigDecimal::add)<br/>.multiply(RATE_PER_UNIT)
+        BillingS->>BillingS: 5. Aggregate using streams
         BillingS->>BillingS: 6. Create BillingRecord entity
         BillingS->>BRR: 7. save(billingRecord)
-        BRR->>DB: 8. Persist to billing_records<br/>(unique: customerId, billingPeriod)
+        BRR->>DB: 8. Persist to billing_records
         DB-->>BRR: Saved record
         BRR-->>BillingS: BillingRecord
         BillingS-->>BC: BillingRecord
     end
-    BC->>BRM: 9. Map Entity → DTO
+    BC->>BRM: 9. Map Entity to DTO
     BRM-->>BC: BillingRecordDto
     BC-->>BS: 200 OK + BillingRecordDto
 ```

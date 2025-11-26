@@ -56,3 +56,4 @@ Thumbs.db
 
 # Bruno
 .bruno/
+bruno/**/env.local

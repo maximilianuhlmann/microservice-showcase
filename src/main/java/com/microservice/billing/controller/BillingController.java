@@ -2,6 +2,7 @@ package com.microservice.billing.controller;
 
 import com.microservice.billing.mapper.BillingRecordMapper;
 import com.microservice.billing.service.BillingService;
+import com.microservice.billing.service.CustomerContextService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -9,13 +10,12 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.Map;
 
 @Slf4j
@@ -27,6 +27,7 @@ public class BillingController {
 
     private final BillingService billingService;
     private final BillingRecordMapper billingRecordMapper;
+    private final CustomerContextService customerContextService;
 
     @Operation(summary = "Calculate billing for a customer")
     @ApiResponses(value = {
@@ -37,29 +38,40 @@ public class BillingController {
     public ResponseEntity<BillingRecordDto> calculateBilling(
             @Parameter(description = "Customer identifier", required = true, example = "customer-123")
             @PathVariable String customerId,
-            @Parameter(description = "Billing period (first day of month)", required = true, example = "2024-01-01")
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate billingPeriod) {
+            @Parameter(description = "Billing period in YYYY-MM format", required = true, example = "2025-11")
+            @RequestParam String billingPeriod) {
         
-        log.info("Calculating billing for customer: {}, period: {}", customerId, billingPeriod);
-        var record = billingService.calculateBilling(customerId, billingPeriod);
-        return ResponseEntity.ok(billingRecordMapper.toDto(record));
+        customerContextService.verifyCustomerAccess(customerId);
+        
+        YearMonth period = YearMonth.parse(billingPeriod);
+        log.info("Calculating billing for customer: {}, period: {}", customerId, period);
+        var billingRecord = billingService.calculateBilling(customerId, period);
+        return ResponseEntity.ok(billingRecordMapper.toDto(billingRecord, billingService.getBillingBreakdown(billingRecord.getId())));
     }
 
-    @Operation(summary = "Get billing record")
+    @Operation(
+        summary = "Get billing record",
+        description = "Retrieves an existing billing record for a customer and period. " +
+                     "Note: The billing record must be calculated first using POST /calculate. " +
+                     "If the record shows totalAmount=0, it means no usage events were found for that period."
+    )
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Billing record found"),
-        @ApiResponse(responseCode = "404", description = "Billing record not found")
+        @ApiResponse(responseCode = "404", description = "Billing record not found. Calculate billing first using POST /calculate.")
     })
     @GetMapping("/{customerId}")
     public ResponseEntity<BillingRecordDto> getBillingRecord(
             @Parameter(description = "Customer identifier", required = true, example = "customer-123")
             @PathVariable String customerId,
-            @Parameter(description = "Billing period", required = true, example = "2024-01-01")
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate billingPeriod) {
+            @Parameter(description = "Billing period in YYYY-MM format", required = true, example = "2025-11")
+            @RequestParam String billingPeriod) {
         
-        log.info("Retrieving billing record for customer: {}, period: {}", customerId, billingPeriod);
-        return billingService.getBillingRecord(customerId, billingPeriod)
-                .map(billingRecordMapper::toDto)
+        customerContextService.verifyCustomerAccess(customerId);
+        
+        YearMonth period = YearMonth.parse(billingPeriod);
+        log.info("Retrieving billing record for customer: {}, period: {}", customerId, period);
+        return billingService.getBillingRecord(customerId, period)
+                .map(billingRecord -> billingRecordMapper.toDto(billingRecord, billingService.getBillingBreakdown(billingRecord.getId())))
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND).build());
     }
@@ -70,20 +82,12 @@ public class BillingController {
             @Parameter(description = "Customer identifier", required = true, example = "customer-123")
             @PathVariable String customerId) {
         
+        customerContextService.verifyCustomerAccess(customerId);
+        
         log.info("Aggregating usage by service type for customer: {}", customerId);
         Map<String, BigDecimal> aggregation = billingService.aggregateUsageByServiceType(customerId);
         return ResponseEntity.ok(aggregation);
     }
 
-    @Operation(summary = "Get total usage quantity")
-    @GetMapping("/{customerId}/total-usage")
-    public ResponseEntity<BigDecimal> getTotalUsage(
-            @Parameter(description = "Customer identifier", required = true, example = "customer-123")
-            @PathVariable String customerId) {
-        
-        log.info("Getting total usage for customer: {}", customerId);
-        BigDecimal total = billingService.getTotalUsageQuantity(customerId);
-        return ResponseEntity.ok(total);
-    }
 }
 

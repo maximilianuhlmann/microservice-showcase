@@ -1,0 +1,29 @@
+meta {
+  name: Record Usage Event - Storage
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/api/v1/usage-events
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  X-API-Key: {{apiKey}}
+}
+
+body:json {
+  {
+    "customerId": "{{customerId}}",
+    "serviceType": "storage",
+    "quantity": 10.5,
+    "unit": "gb",
+    "metadata": "{\"bucket\":\"user-data\"}"
+  }
+}
+
+
+

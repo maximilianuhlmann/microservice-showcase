@@ -1,0 +1,21 @@
+{
+  "name": "Local",
+  "variables": [
+    {
+      "name": "baseUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "name": "customerId",
+      "value": "customer-123"
+    },
+    {
+      "name": "billingPeriod",
+      "value": "2025-11"
+    },
+    {
+      "name": "apiKey",
+      "value": "dev-api-key-123"
+    }
+  ]
+}

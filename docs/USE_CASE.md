@@ -75,14 +75,14 @@ POST /api/v1/billing/customer-123/calculate?billingPeriod=2024-01-01
 ## Data Flow
 
 ```mermaid
-graph LR
-    A[External Service<br/>API Gateway] -->|POST /api/v1/usage-events| B[Usage Billing Service]
+flowchart LR
+    A["External Service: API Gateway"] -->|POST /api/v1/usage-events| B["Usage Billing Service"]
     
-    B1[1. Store event] --> B2[2. Aggregate]
-    B2 --> B3[3. Calculate]
+    B1["1. Store event"] --> B2["2. Aggregate"]
+    B2 --> B3["3. Calculate"]
     
     B --> B1
-    B3 -->|GET /api/v1/billing/{customerId}| C[Billing System<br/>Invoice Generation]
+    B3 -->|GET /api/v1/billing/{customerId}| C["Billing System: Invoice Generation"]
     
     style A fill:#e1f5ff
     style B fill:#fff4e1

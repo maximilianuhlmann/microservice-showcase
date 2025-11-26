@@ -7,7 +7,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
@@ -27,8 +26,8 @@ public class BillingRecord {
     @Column(name = "customer_id", nullable = false)
     private String customerId;
 
-    @Column(name = "billing_period", nullable = false)
-    private LocalDate billingPeriod;
+    @Column(name = "billing_period", nullable = false, length = 7)
+    private String billingPeriod;
 
     @Column(name = "total_amount", nullable = false, precision = 19, scale = 2)
     private BigDecimal totalAmount;
@@ -53,16 +52,16 @@ public class BillingRecord {
 
     private void validate() {
         if (customerId == null || customerId.isBlank()) {
-            throw new IllegalArgumentException("Customer ID cannot be null or blank");
+            throw new com.microservice.billing.exception.DomainValidationException("customerId", customerId, "Customer ID cannot be null or blank");
         }
-        if (billingPeriod == null) {
-            throw new IllegalArgumentException("Billing period cannot be null");
+        if (billingPeriod == null || billingPeriod.isBlank()) {
+            throw new com.microservice.billing.exception.DomainValidationException("billingPeriod", billingPeriod, "Billing period cannot be null or blank");
         }
         if (totalAmount == null) {
-            throw new IllegalArgumentException("Total amount cannot be null");
+            throw new com.microservice.billing.exception.DomainValidationException("totalAmount", totalAmount, "Total amount cannot be null");
         }
         if (totalAmount.compareTo(BigDecimal.ZERO) < 0) {
-            throw new IllegalArgumentException("Total amount cannot be negative");
+            throw new com.microservice.billing.exception.DomainValidationException("totalAmount", totalAmount, "Total amount cannot be negative");
         }
     }
 }

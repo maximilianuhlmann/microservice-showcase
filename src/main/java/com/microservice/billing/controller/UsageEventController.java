@@ -1,6 +1,7 @@
 package com.microservice.billing.controller;
 
 import com.microservice.billing.mapper.UsageEventMapper;
+import com.microservice.billing.service.CustomerContextService;
 import com.microservice.billing.service.UsageEventService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -25,6 +26,7 @@ public class UsageEventController {
 
     private final UsageEventService usageEventService;
     private final UsageEventMapper usageEventMapper;
+    private final CustomerContextService customerContextService;
 
     @Operation(summary = "Record a usage event")
     @ApiResponses(value = {
@@ -46,6 +48,8 @@ public class UsageEventController {
     public ResponseEntity<List<UsageEventDto>> getUsageEventsByCustomer(
             @Parameter(description = "Customer identifier", required = true, example = "customer-123")
             @PathVariable String customerId) {
+        customerContextService.verifyCustomerAccess(customerId);
+        
         log.info("Retrieving usage events for customer: {}", customerId);
         var events = usageEventService.getUsageEventsByCustomer(customerId);
         return ResponseEntity.ok(usageEventMapper.toDtoList(events));
@@ -58,6 +62,8 @@ public class UsageEventController {
             @PathVariable String customerId,
             @Parameter(description = "Service type", required = true, example = "api-calls")
             @PathVariable String serviceType) {
+        customerContextService.verifyCustomerAccess(customerId);
+        
         log.info("Retrieving usage events for customer: {} and service: {}", customerId, serviceType);
         var events = usageEventService.getUsageEventsByCustomerAndServiceType(customerId, serviceType);
         return ResponseEntity.ok(usageEventMapper.toDtoList(events));
