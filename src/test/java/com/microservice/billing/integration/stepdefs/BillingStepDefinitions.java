@@ -16,6 +16,7 @@ import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.time.YearMonth;
+import java.util.Map;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -33,6 +34,7 @@ public class BillingStepDefinitions {
     private int port;
 
     private ResponseEntity<BillingRecordDto> response;
+    private ResponseEntity<Map<String, BigDecimal>> aggregationResponse;
     private String baseUrl;
     private String customerId;
     private String billingPeriod;
@@ -126,10 +128,24 @@ public class BillingStepDefinitions {
 
     @When("I get usage aggregation by service type for customer {string}")
     public void iGetUsageAggregationByServiceTypeForCustomer(String customer) {
+        aggregationResponse = restTemplate.exchange(
+                baseUrl + "/v1/billing/" + customer + "/usage-by-service",
+                HttpMethod.GET,
+                null,
+                new org.springframework.core.ParameterizedTypeReference<Map<String, BigDecimal>>() {}
+        );
     }
 
     @Then("I should receive aggregated usage data")
     public void iShouldReceiveAggregatedUsageData() {
+        assertEquals(HttpStatus.OK, aggregationResponse.getStatusCode());
+        assertNotNull(aggregationResponse.getBody());
+        Map<String, BigDecimal> aggregation = aggregationResponse.getBody();
+        assertFalse(aggregation.isEmpty(), "Aggregation should contain at least one service type");
+        aggregation.values().forEach(quantity -> {
+            assertNotNull(quantity, "Quantity should not be null");
+            assertTrue(quantity.compareTo(BigDecimal.ZERO) >= 0, "Quantity should be non-negative");
+        });
     }
 }
 

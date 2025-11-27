@@ -38,17 +38,18 @@ POST /api/v1/usage-events
 
 ### 2. Calculating Billing
 
-**Actor:** Billing system, scheduled job, or manual trigger
+**Actor:** Billing system, scheduled job (automatic), or manual trigger
 
 **Flow:**
-1. At the end of a billing period (e.g., monthly), the system calls `POST /api/v1/billing/{customerId}/calculate`
-2. The service aggregates all usage events for that period
-3. Applies pricing rules (currently simple rate per unit)
-4. Creates a billing record
+1. **Automatic (Scheduled)**: The `BillingScheduler` automatically calculates billing for all active customers on the first day of each month for the previous month
+2. **Manual**: At any time, the system can call `POST /api/v1/billing/{customerId}/calculate`
+3. The service aggregates all usage events for that period
+4. Applies pricing rules from database (default rates or customer-specific rates)
+5. Creates a billing record with detailed breakdown by service type
 
 **Example:**
 ```
-POST /api/v1/billing/customer-123/calculate?billingPeriod=2024-01-01
+POST /api/v1/billing/customer-123/calculate?billingPeriod=2024-01
 ```
 
 **Response:**
@@ -56,8 +57,22 @@ POST /api/v1/billing/customer-123/calculate?billingPeriod=2024-01-01
 {
   "id": 1,
   "customerId": "customer-123",
-  "billingPeriod": "2024-01-01",
+  "billingPeriod": "2024-01",
   "totalAmount": 10.50,
+  "breakdown": [
+    {
+      "serviceType": "api-calls",
+      "quantity": 1000,
+      "rate": 0.001,
+      "amount": 1.00
+    },
+    {
+      "serviceType": "storage",
+      "quantity": 50,
+      "rate": 0.10,
+      "amount": 5.00
+    }
+  ],
   "createdAt": "2024-02-01T00:00:00"
 }
 ```
@@ -101,13 +116,27 @@ The service supports multiple service types for different usage metrics:
 
 ## Billing Model
 
-Currently implemented as a simple **rate per unit** model:
-- Each service type has a rate (e.g., $0.01 per API call)
-- Total = Sum of all usage quantities × rate
+Currently implemented as a **database-driven rate per unit** model:
+- **Default rates** stored in `default_rates` table (per service type)
+- **Customer-specific rates** can be configured in `pricing_rates` table (optional)
+- **Breakdown included** - billing responses include detailed breakdown by service type
+- **Calculation**: Total = Sum of (quantity × rate) for each service type
+
+**Default Rates:**
+- `api-calls`: $0.001 per request
+- `storage`: $0.10 per GB
+- `compute`: $0.50 per hour
+- `data-transfer`: $0.05 per GB
+
+**Billing Breakdown:**
+Each billing record includes a breakdown showing:
+- Service type
+- Total quantity used
+- Rate applied
+- Amount charged
 
 **Future enhancements:**
 - Tiered pricing (volume discounts)
-- Different rates per service type
 - Time-based pricing
 - Custom pricing rules
 
@@ -125,10 +154,9 @@ Currently implemented as a simple **rate per unit** model:
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | `/api/v1/billing/{customerId}/calculate?billingPeriod=YYYY-MM-DD` | Calculate billing for a period |
-| GET | `/api/v1/billing/{customerId}?billingPeriod=YYYY-MM-DD` | Get billing record |
+| POST | `/api/v1/billing/{customerId}/calculate?billingPeriod=YYYY-MM` | Calculate billing for a period (format: YYYY-MM, e.g., "2024-01") |
+| GET | `/api/v1/billing/{customerId}?billingPeriod=YYYY-MM` | Get billing record with breakdown (format: YYYY-MM) |
 | GET | `/api/v1/billing/{customerId}/usage-by-service` | Get aggregated usage by service type |
-| GET | `/api/v1/billing/{customerId}/total-usage` | Get total usage quantity |
 
 ## Technical Highlights
 

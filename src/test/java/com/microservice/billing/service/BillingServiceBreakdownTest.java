@@ -80,12 +80,12 @@ class BillingServiceBreakdownTest {
                 .thenReturn(Optional.empty());
         when(billingRecordRepository.save(any(BillingRecord.class)))
                 .thenAnswer(invocation -> {
-                    BillingRecord record = invocation.getArgument(0);
+                    BillingRecord billingRecord = invocation.getArgument(0);
                     return BillingRecord.builder()
                             .id(1L)
-                            .customerId(record.getCustomerId())
-                            .billingPeriod(record.getBillingPeriod())
-                            .totalAmount(record.getTotalAmount())
+                            .customerId(billingRecord.getCustomerId())
+                            .billingPeriod(billingRecord.getBillingPeriod())
+                            .totalAmount(billingRecord.getTotalAmount())
                             .build();
                 });
         when(pricingService.getRateForServiceType(customerId, "api-calls"))

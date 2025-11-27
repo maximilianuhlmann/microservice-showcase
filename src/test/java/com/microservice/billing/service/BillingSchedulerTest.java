@@ -81,8 +81,8 @@ class BillingSchedulerTest {
         scheduler.calculateMonthlyBilling();
 
         verify(customerRepository).findAll();
-        verify(billingService).calculateBilling(eq("customer-1"), eq(previousMonth));
-        verify(billingService).calculateBilling(eq("customer-2"), eq(previousMonth));
+        verify(billingService).calculateBilling("customer-1", previousMonth);
+        verify(billingService).calculateBilling("customer-2", previousMonth);
         verify(billingService, never()).calculateBilling(eq("customer-3"), any());
     }
 
@@ -132,7 +132,7 @@ class BillingSchedulerTest {
 
         scheduler.calculateMonthlyBilling();
 
-        verify(billingService).calculateBilling(eq("customer-1"), eq(previousMonth));
+        verify(billingService).calculateBilling("customer-1", previousMonth);
         verify(billingService, never()).calculateBilling(eq("customer-3"), any());
     }
 }

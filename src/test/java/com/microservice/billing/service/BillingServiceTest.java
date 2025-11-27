@@ -140,7 +140,7 @@ class BillingServiceTest {
         String customerId = "customer-1";
         YearMonth billingPeriod = YearMonth.of(2024, 1);
 
-        BillingRecord record = BillingRecord.builder()
+        BillingRecord billingRecord = BillingRecord.builder()
                 .id(1L)
                 .customerId(customerId)
                 .billingPeriod("2024-01")
@@ -148,7 +148,7 @@ class BillingServiceTest {
                 .build();
 
         when(billingRecordRepository.findByCustomerIdAndBillingPeriod(customerId, "2024-01"))
-                .thenReturn(Optional.of(record));
+                .thenReturn(Optional.of(billingRecord));
 
         Optional<BillingRecord> result = billingService.getBillingRecord(customerId, billingPeriod);
 
