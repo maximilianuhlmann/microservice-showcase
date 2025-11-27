@@ -15,52 +15,48 @@ class BillingRecordTest {
         String billingPeriod = "2024-01";
         BigDecimal totalAmount = new BigDecimal("100.50");
 
-        BillingRecord record = BillingRecord.builder()
+        BillingRecord billingRecord = BillingRecord.builder()
                 .customerId(customerId)
                 .billingPeriod(billingPeriod)
                 .totalAmount(totalAmount)
                 .build();
 
-        assertNotNull(record);
-        assertEquals(customerId, record.getCustomerId());
-        assertEquals(billingPeriod, record.getBillingPeriod());
-        assertEquals(totalAmount, record.getTotalAmount());
+        assertNotNull(billingRecord);
+        assertEquals(customerId, billingRecord.getCustomerId());
+        assertEquals(billingPeriod, billingRecord.getBillingPeriod());
+        assertEquals(totalAmount, billingRecord.getTotalAmount());
     }
 
     @Test
-    void shouldRejectNullCustomerId() throws Exception {
-        BillingRecord record = BillingRecord.builder()
+    void shouldRejectNullCustomerId() {
+        BillingRecord billingRecord = BillingRecord.builder()
                 .customerId(null)
                 .billingPeriod("2024-01")
                 .totalAmount(new BigDecimal("100"))
                 .build();
         
-        Exception exception = assertThrows(Exception.class,
-                () -> {
-                    java.lang.reflect.Method method = BillingRecord.class.getDeclaredMethod("onCreate");
-                    method.setAccessible(true);
-                    method.invoke(record);
-                });
+        Exception exception = assertThrows(Exception.class, () -> invokeOnCreate(billingRecord));
         
         DomainValidationException domainException = (DomainValidationException) exception.getCause();
         assertEquals("customerId", domainException.getFieldName());
         assertTrue(domainException.getMessage().contains("Customer ID cannot be null or blank"));
     }
 
+    private void invokeOnCreate(BillingRecord billingRecord) throws Exception {
+        java.lang.reflect.Method method = BillingRecord.class.getDeclaredMethod("onCreate");
+        method.setAccessible(true);
+        method.invoke(billingRecord);
+    }
+
     @Test
-    void shouldRejectNegativeAmount() throws Exception {
-        BillingRecord record = BillingRecord.builder()
+    void shouldRejectNegativeAmount() {
+        BillingRecord billingRecord = BillingRecord.builder()
                 .customerId("customer-1")
                 .billingPeriod("2024-01")
                 .totalAmount(new BigDecimal("-100"))
                 .build();
         
-        Exception exception = assertThrows(Exception.class,
-                () -> {
-                    java.lang.reflect.Method method = BillingRecord.class.getDeclaredMethod("onCreate");
-                    method.setAccessible(true);
-                    method.invoke(record);
-                });
+        Exception exception = assertThrows(Exception.class, () -> invokeOnCreate(billingRecord));
         
         DomainValidationException domainException = (DomainValidationException) exception.getCause();
         assertEquals("totalAmount", domainException.getFieldName());
@@ -69,14 +65,14 @@ class BillingRecordTest {
 
     @Test
     void shouldAllowZeroAmount() {
-        BillingRecord record = BillingRecord.builder()
+        BillingRecord billingRecord = BillingRecord.builder()
                 .customerId("customer-1")
                 .billingPeriod("2024-01")
                 .totalAmount(BigDecimal.ZERO)
                 .build();
 
-        assertNotNull(record);
-        assertEquals(BigDecimal.ZERO, record.getTotalAmount());
+        assertNotNull(billingRecord);
+        assertEquals(BigDecimal.ZERO, billingRecord.getTotalAmount());
     }
 }
 

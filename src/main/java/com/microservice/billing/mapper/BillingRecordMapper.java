@@ -13,10 +13,10 @@ import java.util.List;
 public interface BillingRecordMapper {
 
     @Mapping(target = "breakdown", ignore = true)
-    BillingRecordDto toDto(BillingRecord record);
+    BillingRecordDto toDto(BillingRecord billingRecord);
 
-    default BillingRecordDto toDto(BillingRecord record, List<BillingBreakdown> breakdown) {
-        BillingRecordDto dto = toDto(record);
+    default BillingRecordDto toDto(BillingRecord billingRecord, List<BillingBreakdown> breakdown) {
+        BillingRecordDto dto = toDto(billingRecord);
         if (dto != null && breakdown != null) {
             dto.setBreakdown(breakdown.stream()
                     .map(b -> BillingBreakdownDto.builder()

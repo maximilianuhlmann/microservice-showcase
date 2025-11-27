@@ -2,10 +2,8 @@ package com.microservice.billing.config;
 
 import com.microservice.billing.domain.ApiKey;
 import com.microservice.billing.repository.ApiKeyRepository;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -26,31 +24,31 @@ class ApiKeyCustomerMapperTest {
         String customerId = "customer-123";
         ApiKey apiKeyEntity = ApiKey.builder()
                 .id(1L)
-                .apiKey(apiKey)
+                .key(apiKey)
                 .customerId(customerId)
                 .active(true)
                 .build();
 
-        when(apiKeyRepository.findByApiKeyAndActiveTrue(apiKey)).thenReturn(Optional.of(apiKeyEntity));
+        when(apiKeyRepository.findByKeyAndActiveTrue(apiKey)).thenReturn(Optional.of(apiKeyEntity));
 
         ApiKeyCustomerMapper mapperWithDb = new ApiKeyCustomerMapper(apiKeyRepository, "", true);
         String result = mapperWithDb.getCustomerIdForApiKey(apiKey);
 
         assertEquals(customerId, result);
-        verify(apiKeyRepository).findByApiKeyAndActiveTrue(apiKey);
+        verify(apiKeyRepository).findByKeyAndActiveTrue(apiKey);
     }
 
     @Test
     void shouldReturnNullWhenApiKeyNotFoundInDatabase() {
         String apiKey = "non-existent-key";
 
-        when(apiKeyRepository.findByApiKeyAndActiveTrue(apiKey)).thenReturn(Optional.empty());
+        when(apiKeyRepository.findByKeyAndActiveTrue(apiKey)).thenReturn(Optional.empty());
 
         ApiKeyCustomerMapper mapperWithDb = new ApiKeyCustomerMapper(apiKeyRepository, "", true);
         String result = mapperWithDb.getCustomerIdForApiKey(apiKey);
 
         assertNull(result);
-        verify(apiKeyRepository).findByApiKeyAndActiveTrue(apiKey);
+        verify(apiKeyRepository).findByKeyAndActiveTrue(apiKey);
     }
 
     @Test
@@ -63,7 +61,7 @@ class ApiKeyCustomerMapperTest {
         String result = mapperWithConfig.getCustomerIdForApiKey(apiKey);
 
         assertEquals(customerId, result);
-        verify(apiKeyRepository, never()).findByApiKeyAndActiveTrue(anyString());
+        verify(apiKeyRepository, never()).findByKeyAndActiveTrue(anyString());
     }
 
     @Test
@@ -92,19 +90,19 @@ class ApiKeyCustomerMapperTest {
         String customerId = "customer-123";
         ApiKey apiKeyEntity = ApiKey.builder()
                 .id(1L)
-                .apiKey("api-key-with-spaces")
+                .key("api-key-with-spaces")
                 .customerId(customerId)
                 .active(true)
                 .build();
 
-        when(apiKeyRepository.findByApiKeyAndActiveTrue("api-key-with-spaces"))
+        when(apiKeyRepository.findByKeyAndActiveTrue("api-key-with-spaces"))
                 .thenReturn(Optional.of(apiKeyEntity));
 
         ApiKeyCustomerMapper mapperWithDb = new ApiKeyCustomerMapper(apiKeyRepository, "", true);
         String result = mapperWithDb.getCustomerIdForApiKey(apiKey);
 
         assertEquals(customerId, result);
-        verify(apiKeyRepository).findByApiKeyAndActiveTrue("api-key-with-spaces");
+        verify(apiKeyRepository).findByKeyAndActiveTrue("api-key-with-spaces");
     }
 
     @Test
@@ -112,12 +110,12 @@ class ApiKeyCustomerMapperTest {
         String apiKey = "mapped-key";
         ApiKey apiKeyEntity = ApiKey.builder()
                 .id(1L)
-                .apiKey(apiKey)
+                .key(apiKey)
                 .customerId("customer-1")
                 .active(true)
                 .build();
 
-        when(apiKeyRepository.findByApiKeyAndActiveTrue(apiKey)).thenReturn(Optional.of(apiKeyEntity));
+        when(apiKeyRepository.findByKeyAndActiveTrue(apiKey)).thenReturn(Optional.of(apiKeyEntity));
 
         ApiKeyCustomerMapper mapperWithDb = new ApiKeyCustomerMapper(apiKeyRepository, "", true);
         assertTrue(mapperWithDb.isApiKeyMapped(apiKey));

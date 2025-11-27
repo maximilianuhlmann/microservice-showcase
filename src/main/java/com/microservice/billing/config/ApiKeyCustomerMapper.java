@@ -42,7 +42,7 @@ public class ApiKeyCustomerMapper {
         }
         
         if (useDatabase) {
-            return apiKeyRepository.findByApiKeyAndActiveTrue(apiKey.trim())
+            return apiKeyRepository.findByKeyAndActiveTrue(apiKey.trim())
                     .map(com.microservice.billing.domain.ApiKey::getCustomerId)
                     .orElse(null);
         }
@@ -56,7 +56,7 @@ public class ApiKeyCustomerMapper {
         }
         
         if (useDatabase) {
-            return apiKeyRepository.findByApiKeyAndActiveTrue(apiKey.trim()).isPresent();
+            return apiKeyRepository.findByKeyAndActiveTrue(apiKey.trim()).isPresent();
         }
         
         return apiKeyToCustomerMap.containsKey(apiKey.trim());

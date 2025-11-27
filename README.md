@@ -31,9 +31,12 @@ Built using **MVC (Model-View-Controller)** pattern:
 
 1. ✅ **Record Usage Events**: Track usage events (customer, service type, quantity, unit)
 2. ✅ **Retrieve Usage Events**: Get usage events by customer and/or service type
-3. ✅ **Calculate Billing**: Aggregate usage and calculate billing amounts (with feature flags)
-4. ✅ **Feature Flags**: Togglz-based feature flags for toggling features on/off
-5. ✅ **OpenAPI Documentation**: Swagger UI for API documentation
+3. ✅ **Calculate Billing**: Aggregate usage and calculate billing amounts with detailed breakdown by service type
+4. ✅ **Automatic Billing**: Scheduled monthly billing calculation for all active customers
+5. ✅ **Database-Driven Pricing**: Default rates stored in database with optional customer-specific overrides
+6. ✅ **API Key Authentication**: Secure API access with customer context isolation
+7. ✅ **Feature Flags**: Togglz-based feature flags for toggling features on/off
+8. ✅ **OpenAPI Documentation**: Swagger UI for API documentation
 
 ### Feature Flags (Togglz)
 
@@ -125,14 +128,14 @@ The application will start on `http://localhost:8080`
 ### Running Tests
 
 ```bash
-# Run all tests
+# Run all tests (unit + integration)
 mvn test
 
-# Run only unit tests
-mvn test -Dtest=*Test
+# Run only unit tests (excludes Cucumber integration tests)
+mvn test -Dtest='*Test'
 
-# Run only integration tests
-mvn test -Dtest=*IT
+# Run only Cucumber integration tests
+mvn test -Dtest='RunCucumberTest'
 ```
 
 ### Code Quality & Test Coverage
@@ -190,13 +193,28 @@ SonarLint works automatically as you code and doesn't require a SonarQube server
 
 ### Billing
 
-- **POST** `/api/v1/billing/{customerId}/calculate?billingPeriod=2024-01-01` - Calculate billing
-- **GET** `/api/v1/billing/{customerId}?billingPeriod=2024-01-01` - Get billing record
+- **POST** `/api/v1/billing/{customerId}/calculate?billingPeriod=2024-01` - Calculate billing (format: YYYY-MM)
+- **GET** `/api/v1/billing/{customerId}?billingPeriod=2024-01` - Get billing record with breakdown (format: YYYY-MM)
 
 ### API Documentation
 
 - **Swagger UI**: `http://localhost:8080/swagger-ui.html`
 - **OpenAPI JSON**: `http://localhost:8080/api-docs`
+
+### Authentication
+
+All `/api/**` endpoints require API key authentication via the `X-API-Key` header:
+
+```bash
+curl -X GET http://localhost:8080/api/v1/billing/customer-123?billingPeriod=2024-01 \
+  -H "X-API-Key: dev-api-key-123"
+```
+
+**Default Development API Key:**
+- API Key: `dev-api-key-123`
+- Customer ID: `customer-123`
+
+**Note:** API keys are stored in the `api_keys` table. Each API key is associated with a customer, ensuring customers can only access their own data.
 
 ### Example Requests
 
@@ -204,6 +222,7 @@ SonarLint works automatically as you code and doesn't require a SonarQube server
 ```bash
 curl -X POST http://localhost:8080/api/v1/usage-events \
   -H "Content-Type: application/json" \
+  -H "X-API-Key: dev-api-key-123" \
   -d '{
     "customerId": "customer-123",
     "serviceType": "api-calls",
@@ -214,12 +233,14 @@ curl -X POST http://localhost:8080/api/v1/usage-events \
 
 **Get Usage Events:**
 ```bash
-curl http://localhost:8080/api/v1/usage-events/customer/customer-123
+curl http://localhost:8080/api/v1/usage-events/customer/customer-123 \
+  -H "X-API-Key: dev-api-key-123"
 ```
 
 **Calculate Billing:**
 ```bash
-curl -X POST "http://localhost:8080/api/v1/billing/customer-123/calculate?billingPeriod=2024-01-01"
+curl -X POST "http://localhost:8080/api/v1/billing/customer-123/calculate?billingPeriod=2024-01" \
+  -H "X-API-Key: dev-api-key-123"
 ```
 
 ## Development Approach
@@ -247,17 +268,21 @@ Test data is available in `src/test/resources/test-data.sql` for integration tes
 
 ### API Testing with Bruno
 
-Bruno test collection is available in `bruno/usage-billing-service.bru`:
+Bruno test collection is available in `bruno/Usage Billing Service/`:
 - Record usage events (API calls, storage, compute)
 - Retrieve usage events
-- Calculate and retrieve billing records
+- Calculate and retrieve billing records with breakdown
+- Error handling tests (unauthorized access, invalid formats)
 - Health checks and API documentation
 
 To use Bruno:
 1. Install [Bruno](https://www.usebruno.com/)
-2. Open the `bruno/usage-billing-service.bru` file
-3. Update variables (baseUrl, customerId, billingPeriod) if needed
-4. Run requests
+2. Import the collection from `bruno/Usage Billing Service/`
+3. Import the environment from `bruno/Usage Billing Service/environments/Local.json`
+4. Update variables in `bruno/Usage Billing Service/env.local` if needed
+5. Run requests
+
+See `bruno/Usage Billing Service/README.md` for detailed setup instructions.
 
 ## Next Steps (Future Enhancements)
 

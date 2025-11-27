@@ -18,7 +18,6 @@ import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -46,7 +45,7 @@ class BillingControllerBreakdownTest {
         String customerId = "customer-1";
         YearMonth billingPeriod = YearMonth.of(2024, 1);
 
-        BillingRecord record = BillingRecord.builder()
+        BillingRecord billingRecord = BillingRecord.builder()
                 .id(1L)
                 .customerId(customerId)
                 .billingPeriod("2024-01")
@@ -88,7 +87,7 @@ class BillingControllerBreakdownTest {
                 ))
                 .build();
 
-        when(billingService.calculateBilling(customerId, billingPeriod)).thenReturn(record);
+        when(billingService.calculateBilling(customerId, billingPeriod)).thenReturn(billingRecord);
         when(billingService.getBillingBreakdown(1L)).thenReturn(List.of(breakdown1, breakdown2));
         when(billingRecordMapper.toDto(any(BillingRecord.class), any())).thenReturn(dto);
 

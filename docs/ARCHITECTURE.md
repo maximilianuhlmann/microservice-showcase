@@ -4,9 +4,11 @@
 
 This service follows a **stateless, event-driven architecture** where:
 - **Usage events are immutable** - once recorded, they cannot be modified (only new events can be added)
-- **Billing is calculated on-demand** - not pre-computed, allowing for flexible pricing changes
+- **Billing is calculated on-demand or scheduled** - can be triggered manually or automatically via scheduler
+- **Database-driven pricing** - rates stored in database, allowing runtime updates without code changes
 - **Separation of concerns** - clear boundaries between data ingestion, storage, and calculation
 - **Idempotency** - calculating billing multiple times for the same period returns the same result
+- **Security-first** - API key authentication and customer context isolation for data access
 
 ## High-Level Architecture
 
@@ -83,7 +85,7 @@ sequenceDiagram
     participant BRR as BillingRecordRepository
     participant DB as Database
     
-    BS->>BC: POST /api/v1/billing/{customerId}/calculate?billingPeriod=2024-01-01
+    BS->>BC: POST /api/v1/billing/{customerId}/calculate?billingPeriod=2024-01
     BC->>BC: 1. Extract customerId and billingPeriod
     BC->>BillingS: calculateBilling(customerId, period)
     BillingS->>BRR: 2. Check if billing exists
@@ -150,21 +152,44 @@ erDiagram
     BILLING_RECORDS {
         BIGINT id PK
         VARCHAR customer_id
-        DATE billing_period
+        VARCHAR billing_period "YYYY-MM format"
         DECIMAL total_amount
         TIMESTAMP created_at
         TIMESTAMP updated_at
     }
+    
+    BILLING_BREAKDOWN {
+        BIGINT id PK
+        BIGINT billing_record_id FK
+        VARCHAR service_type
+        DECIMAL quantity
+        DECIMAL rate
+        DECIMAL amount
+        TIMESTAMP created_at
+    }
+    
+    DEFAULT_RATES {
+        BIGINT id PK
+        VARCHAR service_type UK
+        DECIMAL rate
+        BOOLEAN active
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
+    }
+    
+    BILLING_RECORDS ||--o{ BILLING_BREAKDOWN : "has breakdown"
 ```
 
 **Characteristics:**
 - **Aggregated** - represents sum of all usage events for a period
 - **Immutable once created** - prevents accidental recalculation
 - **Query-optimized** - fast lookups by customer and period
+- **Breakdown included** - detailed breakdown by service type in `billing_breakdown` table
+- **Period format** - stored as `VARCHAR(7)` in `YYYY-MM` format (e.g., "2024-01")
 
 ## Billing Calculation Logic
 
-### Current Implementation (Simple Rate Model)
+### Current Implementation (Database-Driven Rate Model)
 
 ```java
 // Step 1: Get all usage events for the period
@@ -172,14 +197,42 @@ List<UsageEvent> events = repository.findByCustomerIdAndDateRange(
     customerId, periodStart, periodEnd
 );
 
-// Step 2: Sum all quantities
-BigDecimal totalQuantity = events.stream()
-    .map(UsageEvent::getQuantity)
+// Step 2: Group by service type and aggregate
+Map<String, BillingBreakdownData> breakdownMap = events.stream()
+    .collect(Collectors.groupingBy(
+        UsageEvent::getServiceType,
+        // Aggregate quantities per service type
+        Collectors.collectingAndThen(
+            Collectors.toList(),
+            serviceEvents -> {
+                BigDecimal totalQuantity = serviceEvents.stream()
+                    .map(UsageEvent::getQuantity)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+                // Get rate from database (default or customer-specific)
+                BigDecimal rate = pricingService.getRateForServiceType(
+                    customerId, serviceType
+                );
+                BigDecimal amount = totalQuantity.multiply(rate);
+                return new BillingBreakdownData(serviceType, totalQuantity, rate, amount);
+            }
+        )
+    ));
+
+// Step 3: Sum all amounts from breakdown
+BigDecimal totalAmount = breakdownMap.values().stream()
+    .map(BillingBreakdownData::amount)
     .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-// Step 3: Apply rate
-BigDecimal totalAmount = totalQuantity.multiply(RATE_PER_UNIT);
+// Step 4: Save billing record and breakdown
+billingRecordRepository.save(billingRecord);
+billingBreakdownRepository.saveAll(breakdowns);
 ```
+
+**Key Features:**
+- **Database-driven pricing**: Rates stored in `default_rates` table, with optional customer-specific overrides in `pricing_rates`
+- **Service-specific rates**: Different rates per service type (api-calls, storage, compute, etc.)
+- **Detailed breakdown**: Each billing record includes breakdown by service type
+- **Automatic calculation**: `BillingScheduler` runs monthly to calculate billing for all active customers
 
 ### Future Enhancements (Extensible Design)
 
@@ -386,17 +439,62 @@ public void calculateMonthlyBilling() {
 }
 ```
 
+## Security & Authentication
+
+### API Key Authentication
+
+The service uses **API key-based authentication** for REST API endpoints:
+
+- **Header**: `X-API-Key` must be included in all `/api/**` requests
+- **Validation**: API keys are validated against the `api_keys` table
+- **Customer Context**: Each API key is associated with a customer, enabling automatic customer context
+- **Customer Isolation**: `CustomerContextService` ensures customers can only access their own data
+
+**Flow:**
+```mermaid
+sequenceDiagram
+    participant Client
+    participant Filter as ApiKeyAuthenticationFilter
+    participant Provider as ApiKeyAuthenticationProvider
+    participant Validator as ApiKeyValidator
+    participant Context as CustomerContextService
+    participant Controller
+    
+    Client->>Filter: Request with X-API-Key header
+    Filter->>Provider: Authenticate
+    Provider->>Validator: Validate API key
+    Validator-->>Provider: Valid/Invalid
+    Provider-->>Filter: Authentication token
+    Filter->>Context: Set customer context
+    Filter->>Controller: Process request
+    Controller->>Context: Verify customer access
+    Context-->>Controller: Access granted/denied
+```
+
+**Key Components:**
+- `ApiKeyAuthenticationFilter`: Intercepts requests, extracts API key
+- `ApiKeyAuthenticationProvider`: Validates API key against database
+- `ApiKeyValidator`: Checks if API key is configured and valid
+- `CustomerContextService`: Enforces customer data isolation
+
+**Error Handling:**
+- Missing API key: `401 Unauthorized`
+- Invalid API key: `401 Unauthorized`
+- Customer access denied: `403 Forbidden` (when accessing another customer's data)
+
 ## Testing Strategy
 
 ### Unit Tests
 - **Mappers:** Test entity ↔ DTO conversion
 - **Services:** Mock repositories, test business logic
 - **Stream operations:** Test aggregation logic
+- **Security:** Test API key validation and customer context
 
 ### Integration Tests
 - **Repository:** Test database queries with Testcontainers
 - **Controller:** Test HTTP endpoints with MockMvc
-- **End-to-end:** Test full request lifecycle
+- **End-to-end:** Test full request lifecycle with Cucumber
+- **Security:** Test authentication and authorization flows
 
 ### Test Data Patterns
 ```java

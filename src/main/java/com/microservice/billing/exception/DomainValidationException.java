@@ -1,9 +1,14 @@
 package com.microservice.billing.exception;
 
+import java.io.Serial;
+
 public class DomainValidationException extends RuntimeException {
 
+    @Serial
+    private static final long serialVersionUID = 1L;
+
     private final String fieldName;
-    private final Object invalidValue;
+    private final transient Object invalidValue;
 
     public DomainValidationException(String fieldName, Object invalidValue, String message) {
         super(message);

@@ -26,13 +26,13 @@ class BillingRecordRepositoryTest {
 
     @Test
     void shouldSaveBillingRecord() {
-        BillingRecord record = BillingRecord.builder()
+        BillingRecord billingRecord = BillingRecord.builder()
                 .customerId("customer-1")
                 .billingPeriod("2024-01")
                 .totalAmount(new BigDecimal("100.50"))
                 .build();
 
-        BillingRecord saved = repository.save(record);
+        BillingRecord saved = repository.save(billingRecord);
 
         assertNotNull(saved.getId());
         assertEquals("customer-1", saved.getCustomerId());
@@ -42,13 +42,13 @@ class BillingRecordRepositoryTest {
 
     @Test
     void shouldFindBillingRecordByCustomerIdAndPeriod() {
-        BillingRecord record = BillingRecord.builder()
+        BillingRecord billingRecord = BillingRecord.builder()
                 .customerId("customer-1")
                 .billingPeriod("2024-01")
                 .totalAmount(new BigDecimal("100.50"))
                 .build();
 
-        repository.save(record);
+        repository.save(billingRecord);
 
         Optional<BillingRecord> found = repository.findByCustomerIdAndBillingPeriod(
                 "customer-1",

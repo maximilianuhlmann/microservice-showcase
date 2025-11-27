@@ -23,7 +23,7 @@ public class ApiKey {
     private Long id;
 
     @Column(name = "api_key", nullable = false, unique = true, length = 255)
-    private String apiKey;
+    private String key;
 
     @Column(name = "customer_id", nullable = false, length = 255)
     private String customerId;
