@@ -18,10 +18,6 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
             pattern = ".*MapperImpl"
         ),
         @ComponentScan.Filter(
-            type = FilterType.ASSIGNABLE_TYPE,
-            classes = com.microservice.billing.config.TogglzConfig.class
-        ),
-        @ComponentScan.Filter(
             type = FilterType.REGEX,
             pattern = ".*Controller"
         )

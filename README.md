@@ -122,8 +122,10 @@ The application will start on `http://localhost:8080`
 
 - **Swagger UI (Interactive):** http://localhost:8080/swagger-ui.html
 - **OpenAPI JSON:** http://localhost:8080/api-docs
-- **Togglz Admin Console:** http://localhost:8080/togglz (Username: `admin`, Password: `admin123`)
-- **H2 Console:** http://localhost:8080/h2-console (Username: `admin`, Password: `admin123`)
+- **Togglz Admin Console:** http://localhost:8080/togglz (Basic Auth - see `application.properties`)
+- **H2 Console:** http://localhost:8080/h2-console (Basic Auth - see `application.properties`)
+
+**⚠️ Security Note:** Default credentials are for development only. Change them in production using environment variables.
 
 ### Running Tests
 
@@ -210,11 +212,11 @@ curl -X GET http://localhost:8080/api/v1/billing/customer-123?billingPeriod=2024
   -H "X-API-Key: dev-api-key-123"
 ```
 
-**Default Development API Key:**
-- API Key: `dev-api-key-123`
-- Customer ID: `customer-123`
-
-**Note:** API keys are stored in the `api_keys` table. Each API key is associated with a customer, ensuring customers can only access their own data.
+**API Key Configuration:**
+- API keys are stored in the `api_keys` table
+- Each API key is associated with a customer, ensuring customers can only access their own data
+- For development, see `application.properties` for default API key configuration
+- **⚠️ Security Note:** Use strong, unique API keys in production. Never commit API keys to version control.
 
 ### Example Requests
 
@@ -222,7 +224,7 @@ curl -X GET http://localhost:8080/api/v1/billing/customer-123?billingPeriod=2024
 ```bash
 curl -X POST http://localhost:8080/api/v1/usage-events \
   -H "Content-Type: application/json" \
-  -H "X-API-Key: dev-api-key-123" \
+  -H "X-API-Key: YOUR_API_KEY" \
   -d '{
     "customerId": "customer-123",
     "serviceType": "api-calls",
@@ -233,14 +235,14 @@ curl -X POST http://localhost:8080/api/v1/usage-events \
 
 **Get Usage Events:**
 ```bash
-curl http://localhost:8080/api/v1/usage-events/customer/customer-123 \
-  -H "X-API-Key: dev-api-key-123"
+curl http://localhost:8080/api/v1/usage-events/customer/YOUR_CUSTOMER_ID \
+  -H "X-API-Key: YOUR_API_KEY"
 ```
 
 **Calculate Billing:**
 ```bash
-curl -X POST "http://localhost:8080/api/v1/billing/customer-123/calculate?billingPeriod=2024-01" \
-  -H "X-API-Key: dev-api-key-123"
+curl -X POST "http://localhost:8080/api/v1/billing/YOUR_CUSTOMER_ID/calculate?billingPeriod=2024-01" \
+  -H "X-API-Key: YOUR_API_KEY"
 ```
 
 ## Development Approach

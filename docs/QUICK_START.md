@@ -39,8 +39,8 @@ This returns the OpenAPI specification in JSON format, useful for:
 **URL:** `http://localhost:8080/togglz`
 
 **Authentication Required:** Basic Auth
-- Username: `admin`
-- Password: `admin123`
+- Credentials configured in `application.properties` (`admin.username` and `admin.password`)
+- Default development credentials: see `application.properties` (change in production!)
 
 Manage feature flags in real-time without restarting the application.
 
@@ -81,8 +81,8 @@ mvn spring-boot:run
 |---------|-----|----------------|
 | **Swagger UI** | http://localhost:8080/swagger-ui.html | None (public) |
 | **OpenAPI JSON** | http://localhost:8080/api-docs | None (public) |
-| **Togglz Console** | http://localhost:8080/togglz | Basic Auth: `admin` / `admin123` |
-| **H2 Console** | http://localhost:8080/h2-console | Basic Auth: `admin` / `admin123` |
+| **Togglz Console** | http://localhost:8080/togglz | Basic Auth (see `application.properties`) |
+| **H2 Console** | http://localhost:8080/h2-console | Basic Auth (see `application.properties`) |
 | **Health Check** | http://localhost:8080/actuator/health | Application health status |
 
 
