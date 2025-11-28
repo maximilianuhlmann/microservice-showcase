@@ -1,0 +1,131 @@
+services:
+  # PostgreSQL Database
+  postgres:
+    env_file:
+      - prod.env
+    image: postgres:15-alpine
+    container_name: usage-billing-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-usagebillingdb}
+      POSTGRES_USER: ${POSTGRES_USER:-usagebilling}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5434:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-usagebilling} -d ${POSTGRES_DB:-usagebillingdb}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - billing-network
+
+  # Usage Billing Service
+  billing-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: usage-billing-service
+    env_file:
+      - prod.env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      # Spring Profile
+      SPRING_PROFILES_ACTIVE: docker
+      # Database Configuration
+      DB_USERNAME: ${POSTGRES_USER:-usagebilling}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      # Admin Authentication
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      # API Keys
+      API_KEYS: ${API_KEYS}
+      API_KEY_MAPPING: ${API_KEY_MAPPING:-}
+      # Billing Scheduler
+      BILLING_SCHEDULER_ENABLED: ${BILLING_SCHEDULER_ENABLED:-false}
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/swagger-ui.html || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - billing-network
+    restart: unless-stopped
+
+  # SonarQube (Code Quality Analysis)
+  sonarqube:
+    image: sonarqube:latest
+    container_name: usage-billing-sonarqube
+    env_file:
+      - prod.env
+    depends_on:
+      - sonarqube-db
+    environment:
+      SONAR_JDBC_URL: jdbc:postgresql://sonarqube-db:5432/${SONARQUBE_DB_NAME:-sonar}
+      SONAR_JDBC_USERNAME: ${SONARQUBE_DB_USER:-sonar}
+      SONAR_JDBC_PASSWORD: ${SONARQUBE_DB_PASSWORD}
+      SONAR_ES_BOOTSTRAP_CHECKS_DISABLE: "true"
+      SONAR_FORCEAUTHENTICATION: "false"
+      SONAR_AUTHENTICATOR_DOWGRADE_TO_HTTP: "false"
+      SONAR_ADMIN_USERNAME: ${SONARQUBE_ADMIN_USERNAME:-admin}
+      SONAR_ADMIN_PASSWORD: ${SONARQUBE_ADMIN_PASSWORD:-admin}
+    volumes:
+      - sonarqube-data:/opt/sonarqube/data
+      - sonarqube-extensions:/opt/sonarqube/extensions
+      - sonarqube-logs:/opt/sonarqube/logs
+    ports:
+      - "9000:9000"
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:9000/api/system/status || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 120s
+    networks:
+      - billing-network
+    restart: unless-stopped
+
+  # SonarQube Database
+  sonarqube-db:
+    image: postgres:15-alpine
+    container_name: usage-billing-sonarqube-db
+    env_file:
+      - prod.env
+    environment:
+      POSTGRES_DB: ${SONARQUBE_DB_NAME:-sonar}
+      POSTGRES_USER: ${SONARQUBE_DB_USER:-sonar}
+      POSTGRES_PASSWORD: ${SONARQUBE_DB_PASSWORD}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - sonarqube-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${SONARQUBE_DB_USER:-sonar} -d ${SONARQUBE_DB_NAME:-sonar}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - billing-network
+
+volumes:
+  postgres-data:
+    driver: local
+  sonarqube-data:
+    driver: local
+  sonarqube-extensions:
+    driver: local
+  sonarqube-logs:
+    driver: local
+  sonarqube-db-data:
+    driver: local
+
+networks:
+  billing-network:
+    driver: bridge
+

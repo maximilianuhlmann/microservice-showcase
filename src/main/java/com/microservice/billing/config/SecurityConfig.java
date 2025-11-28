@@ -1,11 +1,12 @@
 package com.microservice.billing.config;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.core.userdetails.User;
@@ -16,10 +17,12 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.authentication.www.BasicAuthenticationEntryPoint;
 
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
+@Slf4j
 public class SecurityConfig {
 
     @Value("${admin.username:admin}")
@@ -30,54 +33,78 @@ public class SecurityConfig {
 
     private final ApiKeyAuthenticationProvider apiKeyAuthenticationProvider;
     private final ApiKeyValidator apiKeyValidator;
-    private final AuthenticationConfiguration authenticationConfiguration;
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        AuthenticationManager authenticationManager = authenticationConfiguration.getAuthenticationManager();
+    public AuthenticationManager authenticationManager(
+            UserDetailsService userDetailsService,
+            PasswordEncoder passwordEncoder) {
+        return new org.springframework.security.authentication.ProviderManager(
+            apiKeyAuthenticationProvider,
+            daoAuthenticationProvider(userDetailsService, passwordEncoder)
+        );
+    }
+
+    @Bean
+    public SecurityFilterChain securityFilterChain(
+            HttpSecurity http,
+            AuthenticationManager authenticationManager,
+            UserDetailsService userDetailsService,
+            PasswordEncoder passwordEncoder) throws Exception {
         
-        // Create API key filter with authentication manager
         ApiKeyAuthenticationFilter apiKeyFilter = new ApiKeyAuthenticationFilter(authenticationManager, apiKeyValidator);
         
         http
-            // Add API key filter for REST API authentication
-            .addFilterBefore(apiKeyFilter, UsernamePasswordAuthenticationFilter.class)
             .authenticationProvider(apiKeyAuthenticationProvider)
+            .authenticationProvider(daoAuthenticationProvider(userDetailsService, passwordEncoder))
+            .addFilterBefore(apiKeyFilter, UsernamePasswordAuthenticationFilter.class)
             .authorizeHttpRequests(auth -> auth
-                // API endpoints: authenticated via API key OR public (if no API keys configured)
-                // The ApiKeyAuthenticationFilter handles validation
-                .requestMatchers("/api/**").permitAll() // Filter handles authentication
+                .requestMatchers("/api/**").permitAll()
                 .requestMatchers("/swagger-ui/**", "/api-docs/**", "/v3/api-docs/**").permitAll()
-                // Admin endpoints require basic authentication
-                .requestMatchers("/togglz/**", "/h2-console/**").authenticated()
-                // All other requests
+                .requestMatchers("/togglz-console/**").authenticated()
+                .requestMatchers("/h2-console/**").authenticated()
                 .anyRequest().permitAll()
             )
-            .httpBasic(httpBasic -> {}) // Enable basic authentication for admin endpoints
+            .httpBasic(httpBasic -> {
+                BasicAuthenticationEntryPoint entryPoint = new BasicAuthenticationEntryPoint();
+                entryPoint.setRealmName("Togglz Console");
+                httpBasic.authenticationEntryPoint(entryPoint);
+            })
             .csrf(csrf -> csrf
-                .ignoringRequestMatchers("/api/**", "/h2-console/**") // Disable CSRF for REST API and H2 console
+                .ignoringRequestMatchers("/api/**", "/h2-console/**", "/togglz-console/**")
             )
             .headers(headers -> headers
-                .frameOptions(org.springframework.security.config.annotation.web.configurers.HeadersConfigurer.FrameOptionsConfig::sameOrigin) // Allow H2 console frames
+                .frameOptions(org.springframework.security.config.annotation.web.configurers.HeadersConfigurer.FrameOptionsConfig::sameOrigin)
             );
 
         return http.build();
     }
 
     @Bean
-    public UserDetailsService userDetailsService() {
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    public DaoAuthenticationProvider daoAuthenticationProvider(
+            UserDetailsService userDetailsService,
+            PasswordEncoder passwordEncoder) {
+        DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
+        provider.setUserDetailsService(userDetailsService);
+        provider.setPasswordEncoder(passwordEncoder);
+        return provider;
+    }
+
+    @Bean
+    public UserDetailsService userDetailsService(PasswordEncoder passwordEncoder) {
+        String encodedPassword = passwordEncoder.encode(adminPassword);
+        
         UserDetails admin = User.builder()
             .username(adminUsername)
-            .password(passwordEncoder().encode(adminPassword))
+            .password(encodedPassword)
             .roles("ADMIN")
             .build();
 
         return new InMemoryUserDetailsManager(admin);
-    }
-
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
     }
 }
 

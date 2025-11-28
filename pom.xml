@@ -83,17 +83,25 @@
         <!-- Note: mapstruct-processor is only in annotationProcessorPaths, not in dependencies -->
         
         <!-- Feature Flags (Togglz) -->
+        <!-- Version 4.0.0+ required for Spring Boot 3.x (Jakarta EE) support -->
         <dependency>
             <groupId>org.togglz</groupId>
             <artifactId>togglz-spring-boot-starter</artifactId>
-            <version>3.3.0</version>
+            <version>4.4.0</version>
         </dependency>
         
         <!-- Togglz Console (Admin UI) -->
         <dependency>
             <groupId>org.togglz</groupId>
             <artifactId>togglz-console</artifactId>
-            <version>3.3.0</version>
+            <version>4.4.0</version>
+        </dependency>
+        
+        <!-- Togglz Spring Security Integration -->
+        <dependency>
+            <groupId>org.togglz</groupId>
+            <artifactId>togglz-spring-security</artifactId>
+            <version>4.4.0</version>
         </dependency>
         
         <!-- OpenAPI/Swagger -->

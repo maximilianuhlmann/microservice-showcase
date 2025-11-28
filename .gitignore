@@ -57,3 +57,10 @@ Thumbs.db
 # Bruno
 .bruno/
 bruno/**/env.local
+
+# Environment files (keep .env.example in repo)
+.env
+.env.local
+local.env
+*.env
+!.env.example
