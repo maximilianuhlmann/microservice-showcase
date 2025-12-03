@@ -1,10 +1,7 @@
 services:
   # PostgreSQL Database
   postgres:
-    env_file:
-      - prod.env
     image: postgres:15-alpine
-    container_name: usage-billing-postgres
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-usagebillingdb}
       POSTGRES_USER: ${POSTGRES_USER:-usagebilling}
@@ -12,8 +9,6 @@ services:
       PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
       - postgres-data:/var/lib/postgresql/data
-    ports:
-      - "5434:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-usagebilling} -d ${POSTGRES_DB:-usagebillingdb}"]
       interval: 10s
@@ -27,28 +22,20 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: usage-billing-service
-    env_file:
-      - prod.env
     depends_on:
       postgres:
         condition: service_healthy
     environment:
-      # Spring Profile
       SPRING_PROFILES_ACTIVE: docker
-      # Database Configuration
       DB_USERNAME: ${POSTGRES_USER:-usagebilling}
       DB_PASSWORD: ${POSTGRES_PASSWORD}
-      # Admin Authentication
       ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD}
-      # API Keys
       API_KEYS: ${API_KEYS}
       API_KEY_MAPPING: ${API_KEY_MAPPING:-}
-      # Billing Scheduler
       BILLING_SCHEDULER_ENABLED: ${BILLING_SCHEDULER_ENABLED:-false}
     ports:
-      - "8080:8080"
+      - "${BILLING_PORT:-8080}:8080"
     healthcheck:
       test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/swagger-ui.html || exit 1"]
       interval: 30s
@@ -62,9 +49,6 @@ services:
   # SonarQube (Code Quality Analysis)
   sonarqube:
     image: sonarqube:latest
-    container_name: usage-billing-sonarqube
-    env_file:
-      - prod.env
     depends_on:
       - sonarqube-db
     environment:
@@ -95,9 +79,6 @@ services:
   # SonarQube Database
   sonarqube-db:
     image: postgres:15-alpine
-    container_name: usage-billing-sonarqube-db
-    env_file:
-      - prod.env
     environment:
       POSTGRES_DB: ${SONARQUBE_DB_NAME:-sonar}
       POSTGRES_USER: ${SONARQUBE_DB_USER:-sonar}

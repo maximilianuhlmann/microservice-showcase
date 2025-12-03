@@ -1,63 +1,31 @@
 services:
-  # PostgreSQL Database
   postgres:
     env_file:
       - local.env
-    image: postgres:15-alpine
     container_name: usage-billing-postgres-dev
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB:-usagebillingdb}
-      POSTGRES_USER: ${POSTGRES_USER:-usagebilling}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
       - postgres-data-dev:/var/lib/postgresql/data
     ports:
       - "5433:5432"
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-usagebilling} -d ${POSTGRES_DB:-usagebillingdb}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
     networks:
       - billing-network-dev
 
-  # Usage Billing Service
   billing-service:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: usage-billing-service-dev
     env_file:
       - local.env
-    depends_on:
-      postgres:
-        condition: service_healthy
-    environment:
-      # Spring Profile
-      SPRING_PROFILES_ACTIVE: docker
-      # Database Configuration
-      DB_USERNAME: ${POSTGRES_USER:-usagebilling}
-      DB_PASSWORD: ${POSTGRES_PASSWORD}
-      # Admin Authentication
-      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
-      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
-      # API Keys
-      API_KEYS: ${API_KEYS}
-      API_KEY_MAPPING: ${API_KEY_MAPPING:-}
-      # Billing Scheduler
-      BILLING_SCHEDULER_ENABLED: ${BILLING_SCHEDULER_ENABLED:-false}
+    container_name: usage-billing-service-dev
     ports:
-      - "8081:8080"
-    healthcheck:
-      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/swagger-ui.html || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 60s
+      - "8080:8080"
     networks:
       - billing-network-dev
-    restart: unless-stopped
+
+  sonarqube:
+    env_file:
+      - local.env
+
+  sonarqube-db:
+    env_file:
+      - local.env
 
 volumes:
   postgres-data-dev:
