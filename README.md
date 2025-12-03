@@ -8,6 +8,8 @@ A minimal viable product (MVP) for usage-based billing built with Java Spring Bo
 - **Spring Boot 3.2.0**
 - **Spring Data JPA** (Hibernate)
 - **H2 Database** (in-memory for development)
+- **PostgreSQL** (for Docker/production)
+- **Docker** (containerization)
 - **Maven** (build tool)
 - **Lombok** (reducing boilerplate)
 - **JUnit 5** (for testing)
@@ -126,6 +128,39 @@ The application will start on `http://localhost:8080`
 - **H2 Console:** http://localhost:8080/h2-console (Basic Auth - see `application.properties`)
 
 **⚠️ Security Note:** Default credentials are for development only. Change them in production using environment variables.
+
+### Running with Docker
+
+The application can be run using Docker Compose with PostgreSQL and SonarQube:
+
+```bash
+# Development environment (using Makefile)
+make start          # Start all services
+make stop           # Stop all services
+make logs           # View logs
+make ps             # Check service status
+make rebuild        # Rebuild and restart after code changes
+make reset          # Stop, remove volumes, and restart (clean slate)
+
+# Production environment
+make start-prod     # Start production services
+make stop-prod      # Stop production services
+make rebuild-prod   # Rebuild and restart production services
+
+# SonarQube analysis
+make sonar-dev      # Run code quality analysis (development)
+```
+
+**Services:**
+- **Billing Service**: http://localhost:8080
+- **PostgreSQL**: Port 5433 (dev) or 5434 (prod)
+- **SonarQube**: http://localhost:9000 (anonymous access enabled)
+
+**Environment Files:**
+- `local.env` - Development environment variables
+- `prod.env` - Production environment variables
+
+See [DOCKER.md](docs/DOCKER.md) for detailed Docker setup instructions.
 
 ### Running Tests
 
@@ -290,13 +325,13 @@ See `bruno/Usage Billing Service/README.md` for detailed setup instructions.
 
 These can be added incrementally and controlled via feature flags:
 
-- [ ] Docker containerization
-- [ ] Docker Compose setup
+- [x] Docker containerization
+- [x] Docker Compose setup
 - [ ] Kubernetes deployment manifests
 - [ ] Prometheus metrics integration
 - [ ] Grafana dashboards
 - [ ] CI/CD pipeline (GitHub Actions)
-- [ ] PostgreSQL support (currently H2)
+- [x] PostgreSQL support (for Docker/production)
 - [ ] Advanced billing rules and pricing tiers
 - [ ] Invoice generation
 - [ ] Webhook notifications
@@ -309,6 +344,9 @@ Comprehensive documentation is available in the [`docs/`](docs/) folder:
 - **[ARCHITECTURE.md](docs/ARCHITECTURE.md)** - Detailed architecture and design decisions
 - **[USE_CASE.md](docs/USE_CASE.md)** - Use cases and API documentation
 - **[DESIGN_DECISIONS.md](docs/DESIGN_DECISIONS.md)** - Design rationale and folder structure decisions
+- **[DOCKER.md](docs/DOCKER.md)** - Docker setup and deployment guide
+- **[QUICK_START.md](docs/QUICK_START.md)** - Quick start guide
+- **[TOGGLZ_CONSOLE.md](docs/TOGGLZ_CONSOLE.md)** - Togglz feature flags console guide
 - **[EXTENSIONS.md](docs/EXTENSIONS.md)** - Future extensions (GraphQL, Kafka)
 - **[INTEGRATION.md](docs/INTEGRATION.md)** - Apache Camel integration approach
 
