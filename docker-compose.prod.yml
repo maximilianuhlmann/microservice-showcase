@@ -1,0 +1,25 @@
+services:
+  postgres:
+    env_file:
+      - prod.env
+    container_name: usage-billing-postgres
+    ports:
+      - "5434:5432"
+
+  billing-service:
+    env_file:
+      - prod.env
+    container_name: usage-billing-service
+    ports:
+      - "8080:8080"
+
+  sonarqube:
+    env_file:
+      - prod.env
+    container_name: usage-billing-sonarqube
+
+  sonarqube-db:
+    env_file:
+      - prod.env
+    container_name: usage-billing-sonarqube-db
+

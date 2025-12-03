@@ -60,7 +60,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/**").permitAll()
                 .requestMatchers("/swagger-ui/**", "/api-docs/**", "/v3/api-docs/**").permitAll()
-                .requestMatchers("/togglz-console/**").authenticated()
+                .requestMatchers("/togglz/**").authenticated()
                 .requestMatchers("/h2-console/**").authenticated()
                 .anyRequest().permitAll()
             )
@@ -70,7 +70,7 @@ public class SecurityConfig {
                 httpBasic.authenticationEntryPoint(entryPoint);
             })
             .csrf(csrf -> csrf
-                .ignoringRequestMatchers("/api/**", "/h2-console/**", "/togglz-console/**")
+                .ignoringRequestMatchers("/api/**", "/h2-console/**", "/togglz/**")
             )
             .headers(headers -> headers
                 .frameOptions(org.springframework.security.config.annotation.web.configurers.HeadersConfigurer.FrameOptionsConfig::sameOrigin)
