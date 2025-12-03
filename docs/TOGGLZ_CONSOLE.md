@@ -6,8 +6,6 @@ Once the application is running, access the Togglz admin console at:
 
 **URL:** `http://localhost:8080/togglz`
 
-**Authentication Required:** The console is protected with Basic Authentication.
-
 **Authentication Required:** The console uses Basic Authentication.
 
 **Credentials:** Configure in `application.properties` or via environment variables:
@@ -43,9 +41,17 @@ admin.password=${ADMIN_PASSWORD:admin123}
 
 ## Using the Console
 
+### Local Development
+
 1. Start the application: `mvn spring-boot:run`
 2. Open browser: `http://localhost:8080/togglz`
 3. Enter credentials when prompted (configured in `application.properties` or environment variables)
+
+### Docker
+
+1. Start services: `make start` (or `make start-prod` for production)
+2. Open browser: `http://localhost:8080/togglz`
+3. Enter credentials when prompted (configured in `local.env` or `prod.env` via `ADMIN_USERNAME` and `ADMIN_PASSWORD`)
 4. You'll see all features from `Features` enum:
    - Real-time Billing
    - Usage Aggregation
@@ -75,6 +81,6 @@ admin.password=your-secure-password
 **Important:** 
 - Never commit credentials to version control
 - Use environment variables or a secrets manager in production
-- See `.env.example` for a template of required variables
+- For Docker: configure `ADMIN_USERNAME` and `ADMIN_PASSWORD` in `local.env` (dev) or `prod.env` (production)
 
 
